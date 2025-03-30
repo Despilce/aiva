@@ -32,9 +32,7 @@ const SignUpPage = () => {
       return toast.error("Student ID is required");
     }
     if (!/^b\d{7}$/.test(formData.studentID.trim())) {
-      return toast.error(
-        "Invalid Student ID format. It should start with a small 'b' followed by 7 digits"
-      );
+      return toast.error("ID error: use 'b' followed by 7 digits.");
     }
     if (!formData.password.trim()) {
       return toast.error("Password is required");
@@ -72,7 +70,7 @@ const SignUpPage = () => {
               <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                 <UserRoundPlus className="size-6 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold mt-2">Registration</h1>
+              <h1 className="text-xl font-bold mt-2">Registration</h1>
               <p
                 className="text-base mt-2"
                 style={{
@@ -80,7 +78,7 @@ const SignUpPage = () => {
                   transition: "color 0.3s ease",
                 }}
               >
-                Sign up to access institutional resources and support.
+                Join for institutional support.
               </p>
             </div>
           </div>
@@ -99,7 +97,7 @@ const SignUpPage = () => {
                 <input
                   type="text"
                   className="input input-bordered w-full pl-10"
-                  placeholder="Enter your full name (e.g., Syed Rizwan)"
+                  placeholder="Full name (e.g., Syed Rizwan)"
                   value={formData.fullName}
                   onChange={(e) =>
                     setFormData({ ...formData, fullName: e.target.value })
@@ -120,7 +118,7 @@ const SignUpPage = () => {
                 <input
                   type="text"
                   className="input input-bordered w-full pl-10"
-                  placeholder="Enter your student id (e.g., b2102387)"
+                  placeholder="Student ID (e.g., b2102387)"
                   value={formData.studentID}
                   onChange={(e) =>
                     setFormData({ ...formData, studentID: e.target.value })
@@ -141,7 +139,7 @@ const SignUpPage = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   className="input input-bordered w-full pl-10"
-                  placeholder="Create a strong password (min. 8 characters)"
+                  placeholder="Set a password (min. 8 chars)"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })

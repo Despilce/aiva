@@ -18,7 +18,7 @@ const Navbar = () => {
               className="flex items-center gap-2.5 hover:opacity-80 transition-all"
             >
               <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Brain className="w-8 h-8 text-primary" />
+                <Brain className="w-7 h-7 text-primary" />
               </div>
               <h1 className="text-sm font-bold">by despilce</h1>
             </Link>

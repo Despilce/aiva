@@ -32,9 +32,7 @@ const LoginPage = () => {
 
     // Manually enforce our regex check:
     if (!/^b\d{7}$/.test(studentID)) {
-      alert(
-        "Invalid Student ID format. It should start with a small 'b' followed by 7 digits."
-      );
+      alert("ID error: use 'b' followed by 7 digits.");
       return;
     }
 
@@ -81,7 +79,7 @@ const LoginPage = () => {
                   type="text"
                   required
                   className="input input-bordered w-full pl-10"
-                  placeholder="Enter your student id (e.g., b2102387)"
+                  placeholder="Student ID (e.g., b2102387)"
                   value={formData.studentID}
                   onChange={(e) =>
                     setFormData({ ...formData, studentID: e.target.value })
@@ -93,7 +91,7 @@ const LoginPage = () => {
                     })
                   }
                   pattern="^b\\d{7}$"
-                  title="ID should start with a small 'b' followed by 7 digits"
+                  title="ID error: use 'b' followed by 7 digits."
                 />
               </div>
             </div>
