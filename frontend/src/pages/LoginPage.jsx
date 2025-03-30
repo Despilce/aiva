@@ -3,11 +3,11 @@ import { useAuthStore } from "../store/useAuthStore";
 import AuthImagePattern from "../components/AuthImagePattern";
 import { Link } from "react-router-dom";
 import {
-  Brain,
+  BotMessageSquare,
+  BrainCircuit,
   Eye,
   EyeOff,
   Lock,
-  MessageSquare,
   ScanFace,
 } from "lucide-react";
 
@@ -59,7 +59,7 @@ const LoginPage = () => {
                 className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center
                 group-hover:bg-primary/20 transition-colors"
               >
-                <MessageSquare className="w-6 h-6 text-primary" />
+                <BotMessageSquare className="w-6 h-6 text-primary" />
               </div>
               <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
               <p className="text-base-content/60">Sign in to your account</p>
@@ -81,7 +81,7 @@ const LoginPage = () => {
                   type="text"
                   required
                   className="input input-bordered w-full pl-10"
-                  placeholder="'b' followed by 7 digits"
+                  placeholder="Enter your student id (e.g., b2102387)"
                   value={formData.studentID}
                   onChange={(e) =>
                     setFormData({ ...formData, studentID: e.target.value })
@@ -111,7 +111,7 @@ const LoginPage = () => {
                   type={showPassword ? "text" : "password"}
                   required
                   className="input input-bordered w-full pl-10"
-                  placeholder="••••••••"
+                  placeholder="••••••••••••"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
@@ -133,12 +133,12 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              className="btn btn-primary w-full"
+              className="btn btn-primary w-full hover:bg-primary/80 hover:scale-105 transition-all duration-300"
               disabled={isLoggingIn}
             >
               {isLoggingIn ? (
                 <>
-                  <Brain className="h-5 w-5 animate-spin" /> Loading...
+                  <BrainCircuit className="h-5 w-5 animate-spin" /> Loading...
                 </>
               ) : (
                 "Sign in"
@@ -150,7 +150,7 @@ const LoginPage = () => {
             <p className="text-base-content/60">
               Don't have an account?{" "}
               <Link to="/signup" className="link link-primary">
-                Create account
+                Register
               </Link>
             </p>
           </div>
@@ -159,8 +159,8 @@ const LoginPage = () => {
 
       {/* Right Side - Image/Pattern */}
       <AuthImagePattern
-        title="Empower Your Education"
-        subtitle="Reach out to staff, track your progress, and find the answers you need to succeed."
+        title="Unlock Your Academic Potential"
+        subtitle="Easily connect with staff, manage your academics, and achieve your goals."
       />
     </div>
   );

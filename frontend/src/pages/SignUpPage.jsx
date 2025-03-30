@@ -3,11 +3,11 @@ import { useAuthStore } from "../store/useAuthStore";
 import {
   Eye,
   EyeOff,
-  Loader2,
   Lock,
-  MessageSquare,
   User,
   ScanFace,
+  Brain,
+  UserRoundPlus,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -39,8 +39,8 @@ const SignUpPage = () => {
     if (!formData.password.trim()) {
       return toast.error("Password is required");
     }
-    if (formData.password.trim().length < 6) {
-      return toast.error("Password must be at least 6 characters");
+    if (formData.password.trim().length < 8) {
+      return toast.error("Password must be at least 8 characters");
     }
     return true;
   };
@@ -70,9 +70,9 @@ const SignUpPage = () => {
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-2 group">
               <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <MessageSquare className="size-6 text-primary" />
+                <UserRoundPlus className="size-6 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold mt-2">Create Account</h1>
+              <h1 className="text-2xl font-bold mt-2">Registration</h1>
               <p
                 className="text-base mt-2"
                 style={{
@@ -99,7 +99,7 @@ const SignUpPage = () => {
                 <input
                   type="text"
                   className="input input-bordered w-full pl-10"
-                  placeholder="Your Full Name"
+                  placeholder="Enter your full name (e.g., Syed Rizwan)"
                   value={formData.fullName}
                   onChange={(e) =>
                     setFormData({ ...formData, fullName: e.target.value })
@@ -120,7 +120,7 @@ const SignUpPage = () => {
                 <input
                   type="text"
                   className="input input-bordered w-full pl-10"
-                  placeholder="'b' followed by 7 digits"
+                  placeholder="Enter your student id (e.g., b2102387)"
                   value={formData.studentID}
                   onChange={(e) =>
                     setFormData({ ...formData, studentID: e.target.value })
@@ -141,7 +141,7 @@ const SignUpPage = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   className="input input-bordered w-full pl-10"
-                  placeholder="••••••••"
+                  placeholder="Create a strong password (min. 8 characters)"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
@@ -164,12 +164,12 @@ const SignUpPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              className="btn btn-primary w-full"
+              className="btn btn-primary w-full hover:bg-primary/80 hover:scale-105 transition-all duration-300"
               disabled={isSigningUp}
             >
               {isSigningUp ? (
                 <>
-                  <Loader2 className="size-5 animate-spin" /> Loading...
+                  <Brain className="size-5 animate-spin" /> Loading...
                 </>
               ) : (
                 "Create Account"
