@@ -2,32 +2,62 @@ import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import AuthImagePattern from "../components/AuthImagePattern";
 import { Link } from "react-router-dom";
-import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
+import {
+  Brain,
+  Eye,
+  EyeOff,
+  Lock,
+  MessageSquare,
+  ScanFace,
+} from "lucide-react";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  // Use studentID (not email) for user input.
   const [formData, setFormData] = useState({
-    email: "",
+    studentID: "",
     password: "",
   });
+
   const { login, isLoggingIn } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    login(formData);
+
+    // Get the trimmed studentID (to remove accidental spaces)
+    const studentID = formData.studentID.trim();
+    const password = formData.password;
+
+    console.log("Trimmed Student ID:", studentID);
+
+    // Manually enforce our regex check:
+    if (!/^b\d{7}$/.test(studentID)) {
+      alert(
+        "Invalid Student ID format. It should start with a small 'b' followed by 7 digits."
+      );
+      return;
+    }
+
+    // Map the studentID to a dummy email (as sign-up did) so backend receives an email.
+    const payload = {
+      email: studentID + "@mdist.uz",
+      password: password,
+    };
+
+    login(payload);
   };
 
   return (
     <div className="h-screen grid lg:grid-cols-2">
-      {/* Left Side - Form */}
+      {/* Left Side - Login Form */}
       <div className="flex flex-col justify-center items-center p-6 sm:p-12">
         <div className="w-full max-w-md space-y-8">
-          {/* Logo */}
+          {/* Logo and Heading */}
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-2 group">
               <div
-                className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20
-              transition-colors"
+                className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center
+                group-hover:bg-primary/20 transition-colors"
               >
                 <MessageSquare className="w-6 h-6 text-primary" />
               </div>
@@ -36,28 +66,39 @@ const LoginPage = () => {
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form with noValidate disables the browser's native validation */}
+          <form onSubmit={handleSubmit} noValidate className="space-y-6">
+            {/* Student ID Field */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-medium">Email</span>
+                <span className="label-text font-medium">Student ID</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-base-content/40" />
+                  <ScanFace className="h-5 w-5 text-base-content/40" />
                 </div>
                 <input
-                  type="email"
-                  className={`input input-bordered w-full pl-10`}
-                  placeholder="you@example.com"
-                  value={formData.email}
+                  type="text"
+                  required
+                  className="input input-bordered w-full pl-10"
+                  placeholder="'b' followed by 7 digits"
+                  value={formData.studentID}
                   onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
+                    setFormData({ ...formData, studentID: e.target.value })
                   }
+                  onBlur={(e) =>
+                    setFormData({
+                      ...formData,
+                      studentID: e.target.value.trim(),
+                    })
+                  }
+                  pattern="^b\\d{7}$"
+                  title="ID should start with a small 'b' followed by 7 digits"
                 />
               </div>
             </div>
 
+            {/* Password Field */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Password</span>
@@ -68,7 +109,8 @@ const LoginPage = () => {
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className={`input input-bordered w-full pl-10`}
+                  required
+                  className="input input-bordered w-full pl-10"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) =>
@@ -96,8 +138,7 @@ const LoginPage = () => {
             >
               {isLoggingIn ? (
                 <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading...
+                  <Brain className="h-5 w-5 animate-spin" /> Loading...
                 </>
               ) : (
                 "Sign in"
@@ -107,7 +148,7 @@ const LoginPage = () => {
 
           <div className="text-center">
             <p className="text-base-content/60">
-              Don&apos;t have an account?{" "}
+              Don't have an account?{" "}
               <Link to="/signup" className="link link-primary">
                 Create account
               </Link>
@@ -118,12 +159,11 @@ const LoginPage = () => {
 
       {/* Right Side - Image/Pattern */}
       <AuthImagePattern
-        title={"Welcome back!"}
-        subtitle={
-          "Sign in to continue your conversations and catch up with your messages."
-        }
+        title="Empower Your Education"
+        subtitle="Reach out to staff, track your progress, and find the answers you need to succeed."
       />
     </div>
   );
 };
+
 export default LoginPage;

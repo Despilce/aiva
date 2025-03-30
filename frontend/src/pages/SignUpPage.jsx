@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare, User } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  MessageSquare,
+  User,
+  ScanFace,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 import AuthImagePattern from "../components/AuthImagePattern";
@@ -10,50 +18,76 @@ const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
-    email: "",
+    studentID: "",
     password: "",
   });
 
   const { signup, isSigningUp } = useAuthStore();
 
   const validateForm = () => {
-    if (!formData.fullName.trim()) return toast.error("Full name is required");
-    if (!formData.email.trim()) return toast.error("Email is required");
-    if (!/\S+@\S+\.\S+/.test(formData.email)) return toast.error("Invalid email format");
-    if (!formData.password) return toast.error("Password is required");
-    if (formData.password.length < 6) return toast.error("Password must be at least 6 characters");
-
+    if (!formData.fullName.trim()) {
+      return toast.error("Full name is required");
+    }
+    if (!formData.studentID.trim()) {
+      return toast.error("Student ID is required");
+    }
+    if (!/^b\d{7}$/.test(formData.studentID.trim())) {
+      return toast.error(
+        "Invalid Student ID format. It should start with a small 'b' followed by 7 digits"
+      );
+    }
+    if (!formData.password.trim()) {
+      return toast.error("Password is required");
+    }
+    if (formData.password.trim().length < 6) {
+      return toast.error("Password must be at least 6 characters");
+    }
     return true;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const success = validateForm();
+    if (validateForm() === true) {
+      const payload = {
+        fullName: formData.fullName.trim(),
+        email: formData.studentID.trim() + "@mdist.uz",
+        studentID: formData.studentID.trim(),
+        password: formData.password.trim(),
+      };
 
-    if (success === true) signup(formData);
+      console.log("Payload:", payload);
+      signup(payload);
+    }
   };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* left side */}
+      {/* Left side */}
       <div className="flex flex-col justify-center items-center p-6 sm:p-12">
         <div className="w-full max-w-md space-y-8">
-          {/* LOGO */}
+          {/* LOGO and Header */}
           <div className="text-center mb-8">
             <div className="flex flex-col items-center gap-2 group">
-              <div
-                className="size-12 rounded-xl bg-primary/10 flex items-center justify-center 
-              group-hover:bg-primary/20 transition-colors"
-              >
+              <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                 <MessageSquare className="size-6 text-primary" />
               </div>
               <h1 className="text-2xl font-bold mt-2">Create Account</h1>
-              <p className="text-base-content/60">Get started with your free account</p>
+              <p
+                className="text-base mt-2"
+                style={{
+                  color: "var(--secondary-color)",
+                  transition: "color 0.3s ease",
+                }}
+              >
+                Sign up to access institutional resources and support.
+              </p>
             </div>
           </div>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Full Name Field */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Full Name</span>
@@ -64,32 +98,38 @@ const SignUpPage = () => {
                 </div>
                 <input
                   type="text"
-                  className={`input input-bordered w-full pl-10`}
-                  placeholder="John Doe"
+                  className="input input-bordered w-full pl-10"
+                  placeholder="Your Full Name"
                   value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
                 />
               </div>
             </div>
 
+            {/* Student ID Field */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-medium">Email</span>
+                <span className="label-text font-medium">Student ID</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="size-5 text-base-content/40" />
+                  <ScanFace className="size-5 text-base-content/40" />
                 </div>
                 <input
-                  type="email"
-                  className={`input input-bordered w-full pl-10`}
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  type="text"
+                  className="input input-bordered w-full pl-10"
+                  placeholder="'b' followed by 7 digits"
+                  value={formData.studentID}
+                  onChange={(e) =>
+                    setFormData({ ...formData, studentID: e.target.value })
+                  }
                 />
               </div>
             </div>
 
+            {/* Password Field */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Password</span>
@@ -100,10 +140,12 @@ const SignUpPage = () => {
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className={`input input-bordered w-full pl-10`}
+                  className="input input-bordered w-full pl-10"
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                 />
                 <button
                   type="button"
@@ -119,11 +161,15 @@ const SignUpPage = () => {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary w-full" disabled={isSigningUp}>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="btn btn-primary w-full"
+              disabled={isSigningUp}
+            >
               {isSigningUp ? (
                 <>
-                  <Loader2 className="size-5 animate-spin" />
-                  Loading...
+                  <Loader2 className="size-5 animate-spin" /> Loading...
                 </>
               ) : (
                 "Create Account"
@@ -142,13 +188,13 @@ const SignUpPage = () => {
         </div>
       </div>
 
-      {/* right side */}
-
+      {/* Right side */}
       <AuthImagePattern
-        title="Join our community"
-        subtitle="Connect with friends, share moments, and stay in touch with your loved ones."
+        title="Connect with Your Institution"
+        subtitle="Access resources, communicate with staff, and manage your academic needs."
       />
     </div>
   );
 };
+
 export default SignUpPage;
