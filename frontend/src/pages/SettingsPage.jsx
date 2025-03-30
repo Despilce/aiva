@@ -3,10 +3,16 @@ import { useThemeStore } from "../store/useThemeStore";
 import { Send } from "lucide-react";
 
 const PREVIEW_MESSAGES = [
-  { id: 1, content: "Hey! How's it going?", isSent: false },
+  {
+    id: 1,
+    content:
+      "Good evening, Syed. I’d appreciate your thoughts on the refinements for our project. May I share the details?",
+    isSent: false,
+  },
   {
     id: 2,
-    content: "I'm doing great! Just working on some new features.",
+    content:
+      "Good evening, Eugene. Of course, I’d be happy to help. Please go ahead.",
     isSent: true,
   },
 ];
