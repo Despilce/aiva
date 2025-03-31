@@ -1,3 +1,4 @@
+// SettingsPage.jsx
 import { THEMES } from "../constants";
 import { useThemeStore } from "../store/useThemeStore";
 import { Send } from "lucide-react";
@@ -20,6 +21,11 @@ const PREVIEW_MESSAGES = [
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
 
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+  };
+
   return (
     <div className="h-screen container mx-auto px-4 pt-20 max-w-5xl">
       <div className="space-y-6">
@@ -34,11 +40,10 @@ const SettingsPage = () => {
           {THEMES.map((t) => (
             <button
               key={t}
-              className={`
-                group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors
+              className={`group flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors
                 ${theme === t ? "bg-base-200" : "hover:bg-base-200/50"}
               `}
-              onClick={() => setTheme(t)}
+              onClick={() => handleThemeChange(t)}
             >
               <div
                 className="relative h-8 w-full rounded-md overflow-hidden"
@@ -88,8 +93,7 @@ const SettingsPage = () => {
                       }`}
                     >
                       <div
-                        className={`
-                          max-w-[80%] rounded-xl p-3 shadow-sm
+                        className={`max-w-[80%] rounded-xl p-3 shadow-sm
                           ${
                             message.isSent
                               ? "bg-primary text-primary-content"
@@ -99,8 +103,7 @@ const SettingsPage = () => {
                       >
                         <p className="text-sm">{message.content}</p>
                         <p
-                          className={`
-                            text-[10px] mt-1.5
+                          className={`text-[10px] mt-1.5
                             ${
                               message.isSent
                                 ? "text-primary-content/70"
