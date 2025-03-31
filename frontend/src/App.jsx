@@ -1,4 +1,5 @@
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
@@ -26,39 +27,44 @@ const App = () => {
 
   console.log({ authUser });
 
-  if (isCheckingAuth && !authUser)
+  if (isCheckingAuth && !authUser) {
     return (
       <div className="flex items-center justify-center h-screen">
         <BrainCircuit className="size-10 animate-spin" />
       </div>
     );
+  }
 
   return (
     <div data-theme={theme}>
       <Navbar />
-
-      <Routes>
-        <Route
-          path="/"
-          element={authUser ? <HomePage /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/signup"
-          element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/login"
-          element={!authUser ? <LoginPage /> : <Navigate to="/" />}
-        />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route
-          path="/profile"
-          element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
-        />
-      </Routes>
-
+      <div className="content pb-16">
+        {" "}
+        {/* Add padding-bottom to avoid overlap with Footer */}
+        <Routes>
+          <Route
+            path="/"
+            element={authUser ? <HomePage /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/signup"
+            element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/login"
+            element={!authUser ? <LoginPage /> : <Navigate to="/" />}
+          />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route
+            path="/profile"
+            element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+          />
+        </Routes>
+      </div>
       <Toaster />
+      <Footer /> {/* Render Footer here */}
     </div>
   );
 };
+
 export default App;

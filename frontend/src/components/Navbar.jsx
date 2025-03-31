@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
-import { Brain, LogOut, Settings, User } from "lucide-react";
+import { BotMessageSquare, Brain, LogOut, Settings, User } from "lucide-react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
@@ -12,18 +12,45 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 h-16">
         <div className="flex items-center justify-between h-full">
+          {/* Left Section - BotMessageSquare and Links */}
           <div className="flex items-center gap-8">
             <Link
               to="/"
               className="flex items-center gap-2.5 hover:opacity-80 transition-all"
             >
               <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Brain className="w-7 h-7 text-primary" />
+                <BotMessageSquare className="w-7 h-7 text-primary animate-shake" />
               </div>
-              <h1 className="text-sm font-bold">by despilce</h1>
             </Link>
+
+            {/* Added Links */}
+            <a
+              href="https://inet.mdis.uz/"
+              className="text-sm font-bold text-primary hover:opacity-80 transition-opacity"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              inet
+            </a>
+            <a
+              href="https://elearning.mdis.edu.sg/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_24_1"
+              className="text-sm font-bold text-primary hover:opacity-80 transition-opacity"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              blackboard
+            </a>
+            <a
+              href="https://mail.mdis.uz/owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2fmail.mdis.uz%2fowa%2f"
+              className="text-sm font-bold text-primary hover:opacity-80 transition-opacity"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              webmail
+            </a>
           </div>
 
+          {/* Right Section - Settings, Profile, and Logout */}
           <div className="flex items-center gap-2">
             <Link
               to={"/settings"}
@@ -55,4 +82,5 @@ const Navbar = () => {
     </header>
   );
 };
+
 export default Navbar;
