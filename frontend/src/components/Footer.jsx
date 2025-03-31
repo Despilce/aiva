@@ -9,9 +9,9 @@ const BottomBar = () => {
         rel="noopener noreferrer"
         className="flex items-center space-x-2 group"
       >
-        <Brain className="w-5 h-5 text-primary animate-swing group-hover:text-red-500 transition-all duration-300" />
+        <Brain className="w-4 h-4 text-primary animate-swing group-hover:text-red-500 transition-all duration-300" />
 
-        <p className="text-sm font-bold ">by despilce</p>
+        <p className="text-xs font-bold">by despilce</p>
       </a>
     </footer>
   );

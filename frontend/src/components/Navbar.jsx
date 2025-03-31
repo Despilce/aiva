@@ -19,14 +19,14 @@ const Navbar = () => {
               className="flex items-center gap-2.5 hover:opacity-80 transition-all"
             >
               <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <BotMessageSquare className="w-7 h-7 text-primary animate-shake" />
+                <BotMessageSquare className="w-6 h-6 text-primary animate-shake" />
               </div>
             </Link>
 
             {/* Added Links */}
             <a
               href="https://inet.mdis.uz/"
-              className="text-sm font-bold text-primary hover:opacity-80 transition-opacity"
+              className="text-xs font-bold text-primary hover:opacity-80 transition-opacity"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -34,7 +34,7 @@ const Navbar = () => {
             </a>
             <a
               href="https://elearning.mdis.edu.sg/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_24_1"
-              className="text-sm font-bold text-primary hover:opacity-80 transition-opacity"
+              className="text-xs font-bold text-primary hover:opacity-80 transition-opacity"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -42,7 +42,7 @@ const Navbar = () => {
             </a>
             <a
               href="https://mail.mdis.uz/owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2fmail.mdis.uz%2fowa%2f"
-              className="text-sm font-bold text-primary hover:opacity-80 transition-opacity"
+              className="text-xs font-bold text-primary hover:opacity-80 transition-opacity"
               target="_blank"
               rel="noopener noreferrer"
             >
