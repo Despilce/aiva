@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import AuthImagePattern from "../components/AuthImagePattern";
-import { Link } from "react-router-dom";
 import {
   BotMessageSquare,
   BrainCircuit,
@@ -10,39 +10,55 @@ import {
   Lock,
   ScanFace,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const LoginPage = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  // Use studentID (not email) for user input.
-  const [formData, setFormData] = useState({
-    studentID: "",
+  const { login, isLoggingIn } = useAuthStore();
+  const [userType, setUserType] = useState("student");
+  const [inputs, setInputs] = useState({
+    email: "",
     password: "",
   });
-
-  const { login, isLoggingIn } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Get the trimmed studentID (to remove accidental spaces)
-    const studentID = formData.studentID.trim();
-    const password = formData.password;
+    try {
+      // Basic validation
+      if (!inputs.email || !inputs.password) {
+        toast.error("Please fill in all fields");
+        return;
+      }
 
-    console.log("Trimmed Student ID:", studentID);
+      // Validate email/student ID format
+      if (userType === "student") {
+        // Student ID validation - must be b followed by 7 digits
+        const studentIdPattern = /^b\d{7}$/i;
+        if (!studentIdPattern.test(inputs.email)) {
+          toast.error(
+            "Student ID must start with 'b' followed by 7 digits (e.g., b2102387)"
+          );
+          return;
+        }
+      }
 
-    // Manually enforce our regex check:
-    if (!/^b\d{7}$/.test(studentID)) {
-      alert("ID error: use 'b' followed by 7 digits.");
-      return;
+      // Format email based on user type
+      const email =
+        userType === "student"
+          ? `${inputs.email.toLowerCase()}@mdis.uz`
+          : inputs.email.includes("@")
+          ? inputs.email
+          : `${inputs.email}@mdis.uz`;
+
+      await login({
+        email,
+        password: inputs.password,
+        userType,
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      // The error message will be shown by the toast notification in the store
     }
-
-    // Map the studentID to a dummy email (as sign-up did) so backend receives an email.
-    const payload = {
-      email: studentID + "@mdist.uz",
-      password: password,
-    };
-
-    login(payload);
   };
 
   return (
@@ -64,12 +80,40 @@ const LoginPage = () => {
             </div>
           </div>
 
+          {/* User Type Toggle */}
+          <div className="flex justify-center gap-4 p-1 bg-base-200 rounded-lg">
+            <button
+              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                userType === "student"
+                  ? "bg-primary text-primary-content"
+                  : "hover:bg-base-300"
+              }`}
+              onClick={() => setUserType("student")}
+              type="button"
+            >
+              Student
+            </button>
+            <button
+              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                userType === "staff"
+                  ? "bg-primary text-primary-content"
+                  : "hover:bg-base-300"
+              }`}
+              onClick={() => setUserType("staff")}
+              type="button"
+            >
+              Staff
+            </button>
+          </div>
+
           {/* Form with noValidate disables the browser's native validation */}
           <form onSubmit={handleSubmit} noValidate className="space-y-6">
-            {/* Student ID Field */}
+            {/* Email/Student ID */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-medium">Student ID</span>
+                <span className="label-text font-medium">
+                  {userType === "student" ? "Student ID" : "Email Address"}
+                </span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -79,20 +123,21 @@ const LoginPage = () => {
                   type="text"
                   required
                   className="input input-bordered w-full pl-10"
-                  placeholder="Student ID (e.g., b2102387)"
-                  value={formData.studentID}
+                  placeholder={
+                    userType === "student"
+                      ? "Enter your student ID (e.g., b2102387)"
+                      : "Enter your email address"
+                  }
+                  value={inputs.email}
                   onChange={(e) =>
-                    setFormData({ ...formData, studentID: e.target.value })
+                    setInputs({ ...inputs, email: e.target.value.trim() })
                   }
-                  onBlur={(e) =>
-                    setFormData({
-                      ...formData,
-                      studentID: e.target.value.trim(),
-                    })
-                  }
-                  pattern="^b\\d{7}$"
-                  title="ID error: use 'b' followed by 7 digits."
                 />
+                {userType === "staff" && !inputs.email.includes("@") && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50">
+                    @mdis.uz
+                  </span>
+                )}
               </div>
             </div>
 
@@ -106,26 +151,15 @@ const LoginPage = () => {
                   <Lock className="h-5 w-5 text-base-content/40" />
                 </div>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   required
                   className="input input-bordered w-full pl-10"
-                  placeholder="••••••••••••"
-                  value={formData.password}
+                  placeholder="Enter your password"
+                  value={inputs.password}
                   onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
+                    setInputs({ ...inputs, password: e.target.value })
                   }
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-base-content/40" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-base-content/40" />
-                  )}
-                </button>
               </div>
             </div>
 
@@ -135,11 +169,9 @@ const LoginPage = () => {
               disabled={isLoggingIn}
             >
               {isLoggingIn ? (
-                <>
-                  <BrainCircuit className="h-5 w-5 animate-spin" /> Loading...
-                </>
+                <span className="loading loading-spinner"></span>
               ) : (
-                "Sign in"
+                "Login"
               )}
             </button>
           </form>

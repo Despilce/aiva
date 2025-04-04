@@ -4,74 +4,122 @@ import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
-  const { fullName, email, password } = req.body;
   try {
-    if (!fullName || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    const { fullName, email, password, userType } = req.body;
+
+    // Basic validation
+    if (!fullName || !email || !password || !userType) {
+      return res.status(400).json({ error: "Please fill in all fields" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    // Validate email format based on user type
+    if (userType === "student") {
+      // Student email should be in format: b1234567@mdis.uz
+      if (!email.endsWith("@mdis.uz")) {
+        return res.status(400).json({ error: "Invalid student email format" });
+      }
+      const studentId = email.split("@")[0];
+      if (!/^b\d{7}$/.test(studentId)) {
+        return res
+          .status(400)
+          .json({
+            error: "Student ID should start with 'b' followed by 7 digits",
+          });
+      }
+    } else if (userType === "staff") {
+      // Staff email should be a valid email ending with @mdis.uz
+      if (!email.endsWith("@mdis.uz")) {
+        return res
+          .status(400)
+          .json({ error: "Staff email must be a valid MDIS email address" });
+      }
+      // Additional validation for staff email if needed
+      const staffEmailPrefix = email.split("@")[0];
+      if (staffEmailPrefix.length < 3) {
+        return res.status(400).json({ error: "Invalid staff email format" });
+      }
+    } else {
+      return res.status(400).json({ error: "Invalid user type" });
     }
 
-    const user = await User.findOne({ email });
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({
+        error:
+          userType === "student"
+            ? "Student ID already registered"
+            : "Email already registered",
+      });
+    }
 
-    if (user) return res.status(400).json({ message: "Email already exists" });
-
+    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    // Create user
+    const user = await User.create({
       fullName,
       email,
       password: hashedPassword,
+      userType,
     });
 
-    if (newUser) {
-      // generate jwt token here
-      generateToken(newUser._id, res);
-      await newUser.save();
+    // Generate token
+    generateToken(user._id, res);
 
-      res.status(201).json({
-        _id: newUser._id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-        profilePic: newUser.profilePic,
-      });
-    } else {
-      res.status(400).json({ message: "Invalid user data" });
-    }
+    res.status(201).json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      userType: user.userType,
+      profilePic: user.profilePic,
+    });
   } catch (error) {
-    console.log("Error in signup controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error in signup controller:", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const { email, password, userType } = req.body;
 
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    // Basic validation
+    if (!email || !password || !userType) {
+      return res.status(400).json({ error: "Please fill in all fields" });
     }
 
+    // Find user and validate user type
+    const user = await User.findOne({ email });
+    if (!user || user.userType !== userType) {
+      return res.status(400).json({
+        error:
+          userType === "student"
+            ? "Invalid student ID or password"
+            : "Invalid email or password",
+      });
+    }
+
+    // Check password
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ error: "Invalid password" });
     }
 
+    // Generate token
     generateToken(user._id, res);
 
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
+      userType: user.userType,
       profilePic: user.profilePic,
     });
   } catch (error) {
-    console.log("Error in login controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error in login controller:", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -80,8 +128,8 @@ export const logout = (req, res) => {
     res.cookie("jwt", "", { maxAge: 0 });
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
-    console.log("Error in logout controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error in logout controller:", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -108,11 +156,15 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-export const checkAuth = (req, res) => {
+export const checkAuth = async (req, res) => {
   try {
-    res.status(200).json(req.user);
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) {
+      return res.status(401).json({ error: "Not authorized" });
+    }
+    res.status(200).json(user);
   } catch (error) {
-    console.log("Error in checkAuth controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error in checkAuth controller:", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

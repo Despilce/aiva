@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import {
   Eye,
@@ -9,53 +10,71 @@ import {
   Brain,
   UserRoundPlus,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 import AuthImagePattern from "../components/AuthImagePattern";
 import toast from "react-hot-toast";
 
 const SignUpPage = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const { signup, isSigningUp } = useAuthStore();
+  const [userType, setUserType] = useState("student");
+  const [inputs, setInputs] = useState({
     fullName: "",
-    studentID: "",
+    email: "",
     password: "",
+    confirmPassword: "",
   });
 
-  const { signup, isSigningUp } = useAuthStore();
-
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      return toast.error("Full name is required");
-    }
-    if (!formData.studentID.trim()) {
-      return toast.error("Student ID is required");
-    }
-    if (!/^b\d{7}$/.test(formData.studentID.trim())) {
-      return toast.error("ID error: use 'b' followed by 7 digits.");
-    }
-    if (!formData.password.trim()) {
-      return toast.error("Password is required");
-    }
-    if (formData.password.trim().length < 8) {
-      return toast.error("Password must be at least 8 characters");
-    }
-    return true;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (validateForm() === true) {
-      const payload = {
-        fullName: formData.fullName.trim(),
-        email: formData.studentID.trim() + "@mdist.uz",
-        studentID: formData.studentID.trim(),
-        password: formData.password.trim(),
-      };
+    try {
+      // Validate password match
+      if (inputs.password !== inputs.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
 
-      console.log("Payload:", payload);
-      signup(payload);
+      // Validate password length
+      if (inputs.password.length < 6) {
+        toast.error("Password must be at least 6 characters");
+        return;
+      }
+
+      // Validate email/student ID format
+      if (userType === "student") {
+        // Student ID validation - must be b followed by 7 digits
+        const studentIdPattern = /^b\d{7}$/i;
+        if (!studentIdPattern.test(inputs.email)) {
+          toast.error(
+            "Student ID must start with 'b' followed by 7 digits (e.g., b2102387)"
+          );
+          return;
+        }
+      } else {
+        // Staff email validation - just check minimum length
+        if (inputs.email.length < 3) {
+          toast.error("Email prefix must be at least 3 characters");
+          return;
+        }
+      }
+
+      // Format email based on user type
+      const email =
+        userType === "student"
+          ? `${inputs.email.toLowerCase()}@mdis.uz`
+          : inputs.email.includes("@")
+          ? inputs.email
+          : `${inputs.email}@mdis.uz`;
+
+      await signup({
+        fullName: inputs.fullName.trim(),
+        email,
+        password: inputs.password,
+        userType,
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      // The error message will be shown by the toast notification in the store
     }
   };
 
@@ -83,6 +102,32 @@ const SignUpPage = () => {
             </div>
           </div>
 
+          {/* User Type Toggle */}
+          <div className="flex justify-center gap-4 p-1 bg-base-200 rounded-lg">
+            <button
+              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                userType === "student"
+                  ? "bg-primary text-primary-content"
+                  : "hover:bg-base-300"
+              }`}
+              onClick={() => setUserType("student")}
+              type="button"
+            >
+              Student
+            </button>
+            <button
+              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                userType === "staff"
+                  ? "bg-primary text-primary-content"
+                  : "hover:bg-base-300"
+              }`}
+              onClick={() => setUserType("staff")}
+              type="button"
+            >
+              Staff
+            </button>
+          </div>
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name Field */}
@@ -97,33 +142,52 @@ const SignUpPage = () => {
                 <input
                   type="text"
                   className="input input-bordered w-full pl-10"
-                  placeholder="Full name (e.g., Syed Rizwan)"
-                  value={formData.fullName}
+                  placeholder={
+                    userType === "student"
+                      ? "Full name (e.g., Izzatillo Tursunov)"
+                      : "Full name (e.g., Syed Rizwan)"
+                  }
+                  value={inputs.fullName}
                   onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
+                    setInputs({ ...inputs, fullName: e.target.value })
                   }
                 />
               </div>
             </div>
 
-            {/* Student ID Field */}
+            {/* Email/Student ID Field */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-medium">Student ID</span>
+                <span className="label-text font-medium">
+                  {userType === "student" ? "Student ID" : "Email Address"}
+                </span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <ScanFace className="size-5 text-base-content/40" />
+                  {userType === "student" ? (
+                    <ScanFace className="size-5 text-base-content/40" />
+                  ) : (
+                    <User className="size-5 text-base-content/40" />
+                  )}
                 </div>
                 <input
                   type="text"
                   className="input input-bordered w-full pl-10"
-                  placeholder="Student ID (e.g., b2102387)"
-                  value={formData.studentID}
+                  placeholder={
+                    userType === "student"
+                      ? "Enter your student ID (e.g., b2102387)"
+                      : "Enter your email address"
+                  }
+                  value={inputs.email}
                   onChange={(e) =>
-                    setFormData({ ...formData, studentID: e.target.value })
+                    setInputs({ ...inputs, email: e.target.value.trim() })
                   }
                 />
+                {userType === "staff" && !inputs.email.includes("@") && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50">
+                    @mdis.uz
+                  </span>
+                )}
               </div>
             </div>
 
@@ -137,25 +201,35 @@ const SignUpPage = () => {
                   <Lock className="size-5 text-base-content/40" />
                 </div>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   className="input input-bordered w-full pl-10"
                   placeholder="Set a password (min. 8 chars)"
-                  value={formData.password}
+                  value={inputs.password}
                   onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
+                    setInputs({ ...inputs, password: e.target.value })
                   }
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="size-5 text-base-content/40" />
-                  ) : (
-                    <Eye className="size-5 text-base-content/40" />
-                  )}
-                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password Field */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Confirm Password</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="size-5 text-base-content/40" />
+                </div>
+                <input
+                  type="password"
+                  className="input input-bordered w-full pl-10"
+                  placeholder="Confirm your password"
+                  value={inputs.confirmPassword}
+                  onChange={(e) =>
+                    setInputs({ ...inputs, confirmPassword: e.target.value })
+                  }
+                />
               </div>
             </div>
 
