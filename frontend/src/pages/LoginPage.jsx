@@ -15,6 +15,7 @@ import { toast } from "react-hot-toast";
 const LoginPage = () => {
   const { login, isLoggingIn } = useAuthStore();
   const [userType, setUserType] = useState("student");
+  const [showPassword, setShowPassword] = useState(false);
   const [inputs, setInputs] = useState({
     email: "",
     password: "",
@@ -151,7 +152,7 @@ const LoginPage = () => {
                   <Lock className="h-5 w-5 text-base-content/40" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   className="input input-bordered w-full pl-10"
                   placeholder="Enter your password"
@@ -160,6 +161,17 @@ const LoginPage = () => {
                     setInputs({ ...inputs, password: e.target.value })
                   }
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/40 hover:text-base-content/60"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
 
