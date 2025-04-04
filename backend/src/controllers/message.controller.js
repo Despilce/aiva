@@ -7,7 +7,9 @@ import { getReceiverSocketId, io } from "../lib/socket.js";
 export const getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
-    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+    const filteredUsers = await User.find({
+      _id: { $ne: loggedInUserId },
+    }).select("-password");
 
     res.status(200).json(filteredUsers);
   } catch (error) {
@@ -65,6 +67,59 @@ export const sendMessage = async (req, res) => {
     res.status(201).json(newMessage);
   } catch (error) {
     console.log("Error in sendMessage controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getUsersWithChats = async (req, res) => {
+  try {
+    const loggedInUserId = req.user._id;
+
+    // Find all messages where the logged-in user is either sender or receiver
+    const messages = await Message.find({
+      $or: [{ senderId: loggedInUserId }, { receiverId: loggedInUserId }],
+    });
+
+    // Get unique user IDs from messages
+    const userIds = [
+      ...new Set([
+        ...messages.map((msg) => msg.senderId.toString()),
+        ...messages.map((msg) => msg.receiverId.toString()),
+      ]),
+    ].filter((id) => id !== loggedInUserId.toString());
+
+    // Get user details for the filtered IDs
+    const usersWithChats = await User.find({
+      _id: { $in: userIds },
+    }).select("-password");
+
+    res.status(200).json(usersWithChats);
+  } catch (error) {
+    console.error("Error in getUsersWithChats: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const searchUsers = async (req, res) => {
+  try {
+    const loggedInUserId = req.user._id;
+    const searchQuery = req.query.q || "";
+
+    const users = await User.find({
+      $and: [
+        { _id: { $ne: loggedInUserId } },
+        {
+          $or: [
+            { fullName: { $regex: searchQuery, $options: "i" } },
+            { email: { $regex: searchQuery, $options: "i" } },
+          ],
+        },
+      ],
+    }).select("-password");
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error in searchUsers: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
