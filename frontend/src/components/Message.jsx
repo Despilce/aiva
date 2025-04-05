@@ -21,8 +21,7 @@ const Message = ({ message, isOwnMessage }) => {
             isOwnMessage ? "text-right" : ""
           }`}
         >
-          {message.sender.fullName}
-          <time className="text-xs ml-1">
+          <time className="text-xs">
             {formatMessageTime(message.createdAt)}
           </time>
         </div>
