@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    biography: {
+      type: String,
+      default: "",
+    },
     userType: {
       type: String,
       enum: ["student", "staff"],

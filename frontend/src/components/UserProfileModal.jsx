@@ -31,6 +31,18 @@ const UserProfileModal = ({ user, onClose }) => {
           <h2 className="text-2xl font-bold mb-1">{user.fullName}</h2>
           <p className="text-base-content/70 mb-4">{user.email}</p>
 
+          {/* Biography */}
+          {user.biography && (
+            <div className="mb-4 text-left">
+              <h3 className="text-sm font-medium text-base-content/70 mb-1">
+                Biography
+              </h3>
+              <p className="text-base bg-base-200 p-3 rounded-lg">
+                {user.biography}
+              </p>
+            </div>
+          )}
+
           {/* Additional info */}
           <div className="bg-base-200 rounded-lg p-4 text-sm space-y-2">
             <p>

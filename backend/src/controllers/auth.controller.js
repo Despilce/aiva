@@ -20,11 +20,9 @@ export const signup = async (req, res) => {
       }
       const studentId = email.split("@")[0];
       if (!/^b\d{7}$/.test(studentId)) {
-        return res
-          .status(400)
-          .json({
-            error: "Student ID should start with 'b' followed by 7 digits",
-          });
+        return res.status(400).json({
+          error: "Student ID should start with 'b' followed by 7 digits",
+        });
       }
     } else if (userType === "staff") {
       // Staff email should be a valid email ending with @mdis.uz
@@ -135,19 +133,26 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
+    const { profilePic, biography } = req.body;
     const userId = req.user._id;
+    const updateData = {};
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile pic is required" });
+    if (profilePic) {
+      const uploadResponse = await cloudinary.uploader.upload(profilePic);
+      updateData.profilePic = uploadResponse.secure_url;
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
-      { new: true }
-    );
+    if (biography !== undefined) {
+      updateData.biography = biography;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No data to update" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    });
 
     res.status(200).json(updatedUser);
   } catch (error) {
@@ -165,6 +170,52 @@ export const checkAuth = async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     console.error("Error in checkAuth controller:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    if (!currentPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: "Please provide both current and new password" });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "New password must be at least 6 characters long" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Verify current password
+    const isPasswordCorrect = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ error: "Current password is incorrect" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error in changePassword controller:", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };

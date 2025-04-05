@@ -12,6 +12,7 @@ export const useAuthStore = create((set, get) => ({
   isLoggingIn: false,
   isUpdatingProfile: false,
   isCheckingAuth: true,
+  isChangingPassword: false,
   onlineUsers: [],
   socket: null,
 
@@ -87,6 +88,22 @@ export const useAuthStore = create((set, get) => ({
       toast.error(error.response.data.message);
     } finally {
       set({ isUpdatingProfile: false });
+    }
+  },
+
+  changePassword: async ({ currentPassword, newPassword }) => {
+    set({ isChangingPassword: true });
+    try {
+      await axiosInstance.put("/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
+      toast.success("Password changed successfully");
+    } catch (error) {
+      console.log("error in change password:", error);
+      toast.error(error.response?.data?.error || "Failed to change password");
+    } finally {
+      set({ isChangingPassword: false });
     }
   },
 
