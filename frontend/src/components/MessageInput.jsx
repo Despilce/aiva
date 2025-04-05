@@ -164,9 +164,10 @@ const MessageInput = () => {
       return;
     }
 
-    const sendingToast = toast.loading("Sending message...");
+    let sendingToast;
     try {
       setIsProcessing(true);
+      sendingToast = toast.loading("Sending message...");
 
       if (imagePreview && originalFile) {
         // Create FormData for image upload
@@ -218,15 +219,28 @@ const MessageInput = () => {
       setProcessingProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
 
-      toast.dismiss(sendingToast);
-      toast.success("Message sent successfully");
+      // Ensure the loading toast is dismissed before showing success
+      if (sendingToast) {
+        toast.dismiss(sendingToast);
+        // Small delay before showing success to prevent toast overlap
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      toast.success("Message sent successfully", {
+        duration: 2000, // Show for 2 seconds only
+      });
     } catch (error) {
-      toast.dismiss(sendingToast);
+      if (sendingToast) {
+        toast.dismiss(sendingToast);
+        // Small delay before showing error to prevent toast overlap
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
       const errorMessage =
         error.response?.data?.error ||
         error.message ||
         "Failed to send message. Please try again";
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        duration: 3000, // Show errors for 3 seconds
+      });
       console.error("Failed to send message:", error);
     } finally {
       setIsProcessing(false);

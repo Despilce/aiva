@@ -2,6 +2,45 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import uploadImage from "../lib/cloudinary.js";
+import multer from "multer";
+
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
+const fileFilter = (req, file, cb) => {
+  // Accept only image files
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed"), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+}).single("profilePic");
+
+// Wrap multer in a promise to handle errors better
+const handleUpload = (req, res) => {
+  return new Promise((resolve, reject) => {
+    upload(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          reject(new Error("File is too large. Maximum size is 10MB"));
+        } else {
+          reject(new Error("File upload error: " + err.message));
+        }
+      } else if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
 
 export const signup = async (req, res) => {
   try {
@@ -133,39 +172,54 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic, biography } = req.body;
+    // Handle file upload first if there's a file
+    if (req.headers["content-type"]?.includes("multipart/form-data")) {
+      await handleUpload(req, res);
+    }
+
     const userId = req.user._id;
     const updateData = {};
 
-    if (profilePic) {
+    // Handle profile picture upload
+    if (req.file) {
       try {
-        const uploadResponse = await uploadImage(profilePic);
+        // Convert buffer to base64
+        const base64Image = req.file.buffer.toString("base64");
+        const dataUri = `data:${req.file.mimetype};base64,${base64Image}`;
+
+        const uploadResponse = await uploadImage(dataUri);
+        if (!uploadResponse?.secure_url) {
+          throw new Error("Failed to get image URL from Cloudinary");
+        }
         updateData.profilePic = uploadResponse.secure_url;
       } catch (uploadError) {
         console.error("Error uploading to Cloudinary:", uploadError);
         return res.status(400).json({
-          message:
-            "Failed to upload image. Please try a different image or compress it further.",
+          error:
+            "Failed to upload image. Please try again or use a different image.",
         });
       }
     }
 
-    if (biography !== undefined) {
-      updateData.biography = biography;
+    // Handle biography update
+    if (req.body.biography !== undefined) {
+      updateData.biography = req.body.biography;
     }
 
     if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ message: "No data to update" });
+      return res.status(400).json({ error: "No data to update" });
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
-    });
+    }).select("-password");
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    console.log("error in update profile:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error in update profile:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Failed to update profile" });
   }
 };
 

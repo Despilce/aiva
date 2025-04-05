@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User, Lock, Eye, EyeOff, Edit2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { axiosInstance } from "../lib/axios";
 
 const ProfilePage = () => {
   const {
@@ -12,6 +13,9 @@ const ProfilePage = () => {
     isChangingPassword,
   } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
+  const [originalFile, setOriginalFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [processingProgress, setProcessingProgress] = useState(0);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -22,72 +26,149 @@ const ProfilePage = () => {
     confirmNewPassword: "",
   });
 
-  const compressImage = (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-
-          // Calculate new dimensions while maintaining aspect ratio
-          const maxDimension = 1200; // Max width or height
-          if (width > height && width > maxDimension) {
-            height = (height * maxDimension) / width;
-            width = maxDimension;
-          } else if (height > maxDimension) {
-            width = (width * maxDimension) / height;
-            height = maxDimension;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Get compressed image as base64 string
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8); // 0.8 quality
-          resolve(compressedBase64);
-        };
-      };
-    });
-  };
-
-  const handleImageUpload = async (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    try {
-      // Show loading toast
-      const loadingToast = toast.loading("Processing image...");
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
 
-      // Compress image if it's larger than 100KB
-      let base64Image;
-      if (file.size > 100 * 1024) {
-        // 100KB
-        base64Image = await compressImage(file);
-      } else {
-        const reader = new FileReader();
-        base64Image = await new Promise((resolve) => {
-          reader.onload = (e) => resolve(e.target.result);
-          reader.readAsDataURL(file);
-        });
+    try {
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImg(e.target.result);
+        setOriginalFile(file);
+      };
+      reader.readAsDataURL(file);
+
+      // Process image
+      await handleCompression(file);
+    } catch (error) {
+      toast.error("Failed to load image");
+      console.error("Error loading image:", error);
+      resetImage();
+    }
+  };
+
+  const handleCompression = async (file) => {
+    try {
+      setProcessingProgress(10); // Start progress
+
+      // Load image for compression
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+      setProcessingProgress(30); // Image loaded
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Calculate dimensions
+      const maxDimension = 1000; // Reduced from 1200 to 1000 for profile pictures
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height && width > maxDimension) {
+        height = Math.round((height * maxDimension) / width);
+        width = maxDimension;
+      } else if (height > maxDimension) {
+        width = Math.round((width * maxDimension) / height);
+        height = maxDimension;
       }
 
-      setSelectedImg(base64Image);
-      await updateProfile({ profilePic: base64Image });
+      canvas.width = width;
+      canvas.height = height;
+      setProcessingProgress(50); // Dimensions calculated
 
-      // Dismiss loading toast and show success
-      toast.dismiss(loadingToast);
-      toast.success("Profile picture updated successfully");
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+      setProcessingProgress(70); // Image drawn
+
+      // Try different quality levels if needed
+      let quality = 0.8;
+      let finalImage = canvas.toDataURL("image/jpeg", quality);
+      let finalSize = Math.round((finalImage.length - 22) * 0.75);
+
+      while (finalSize > 500000 && quality > 0.3) {
+        // 500KB limit
+        quality -= 0.1;
+        finalImage = canvas.toDataURL("image/jpeg", quality);
+        finalSize = Math.round((finalImage.length - 22) * 0.75);
+      }
+
+      setProcessingProgress(85); // Image compressed
+
+      // Convert to file
+      const response = await fetch(finalImage);
+      const blob = await response.blob();
+      const compressedFile = new File([blob], file.name, {
+        type: "image/jpeg",
+      });
+      setProcessingProgress(100); // Conversion complete
+
+      // Upload the compressed file
+      await handleUpload(compressedFile);
     } catch (error) {
-      toast.error("Failed to update profile picture");
-      console.error("Error uploading image:", error);
+      toast.error("Failed to process image");
+      console.error("Error processing image:", error);
+      resetImage();
+    } finally {
+      setProcessingProgress(0);
     }
+  };
+
+  const handleUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("profilePic", file);
+
+    try {
+      const response = await axiosInstance.put(
+        "/auth/update-profile",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.lengthComputable) {
+              const progress = Math.round(
+                (progressEvent.loaded / progressEvent.total) * 100
+              );
+              setUploadProgress(progress);
+            }
+          },
+        }
+      );
+
+      // Update auth store with new user data
+      useAuthStore.setState((state) => ({
+        authUser: { ...state.authUser, ...response.data },
+      }));
+
+      toast.success("Profile picture updated successfully");
+      resetImage();
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to update profile picture";
+      toast.error(errorMessage);
+      console.error("Error uploading profile picture:", error);
+      resetImage();
+    }
+  };
+
+  const resetImage = () => {
+    setSelectedImg(null);
+    setOriginalFile(null);
+    setUploadProgress(0);
+    setProcessingProgress(0);
   };
 
   const handleChangePassword = async (e) => {
@@ -172,11 +253,32 @@ const ProfilePage = () => {
                   id="avatar-upload"
                   className="hidden"
                   accept="image/*"
-                  onChange={handleImageUpload}
+                  onChange={handleImageChange}
                   disabled={isUpdatingProfile}
                 />
               </label>
             </div>
+
+            {/* Processing/Upload Progress */}
+            {(processingProgress > 0 ||
+              (uploadProgress > 0 && uploadProgress < 100)) && (
+              <div className="w-full max-w-xs">
+                <div className="w-full bg-base-200 rounded-full h-1.5">
+                  <div
+                    className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${processingProgress || uploadProgress}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-xs text-base-content/60 mt-1">
+                  {processingProgress > 0
+                    ? `Processing: ${processingProgress}%`
+                    : `Uploading: ${uploadProgress}%`}
+                </span>
+              </div>
+            )}
+
             <p className="text-sm text-zinc-400">
               {isUpdatingProfile
                 ? "Uploading..."
