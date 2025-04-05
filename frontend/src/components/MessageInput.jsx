@@ -158,58 +158,51 @@ const MessageInput = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!text.trim() && !imagePreview) return;
+    if ((!text || text.trim() === "") && !imagePreview) return;
     if (!selectedUser?._id) {
-      toast.error("No chat selected");
+      toast.error("No chat selected", {
+        duration: 3000,
+        position: "top-center",
+      });
       return;
     }
 
-    let sendingToast;
     try {
       setIsProcessing(true);
-      sendingToast = toast.loading("Sending message...");
-
-      if (imagePreview && originalFile) {
-        // Create FormData for image upload
-        const formData = new FormData();
-        if (text.trim()) {
-          formData.append("text", text.trim());
-        }
-        formData.append("image", originalFile);
-
-        // Use axios instead of XMLHttpRequest for better handling
-        const response = await axiosInstance.post(
-          `/messages/send/${selectedUser._id}`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-            onUploadProgress: (progressEvent) => {
-              if (progressEvent.lengthComputable) {
-                const progress = Math.round(
-                  (progressEvent.loaded / progressEvent.total) * 100
-                );
-                setUploadProgress(progress);
-              }
-            },
-          }
-        );
-
-        // Update chat store with new message
-        const { messages, users } = useChatStore.getState();
-        useChatStore.setState({
-          messages: [...messages, response.data],
-          users: users.some((u) => u._id === selectedUser._id)
-            ? users
-            : [...users, selectedUser],
-        });
-      } else {
-        // Text-only message
-        await sendMessage({
-          text: text.trim(),
-        });
+      const formData = new FormData();
+      if (text.trim() !== "") {
+        formData.append("text", text.trim());
       }
+      if (imagePreview && originalFile) {
+        formData.append("image", originalFile);
+      }
+
+      const response = await axiosInstance.post(
+        `/messages/send/${selectedUser._id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.lengthComputable) {
+              const progress = Math.round(
+                (progressEvent.loaded / progressEvent.total) * 100
+              );
+              setUploadProgress(progress);
+            }
+          },
+        }
+      );
+
+      const message = response.data;
+      const { messages, users } = useChatStore.getState();
+      useChatStore.setState({
+        messages: [...messages, message],
+        users: users.some((u) => u._id === selectedUser._id)
+          ? users
+          : [...users, selectedUser],
+      });
 
       // Clear form
       setText("");
@@ -219,31 +212,32 @@ const MessageInput = () => {
       setProcessingProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
 
-      // Ensure the loading toast is dismissed before showing success
-      if (sendingToast) {
-        toast.dismiss(sendingToast);
-        // Small delay before showing success to prevent toast overlap
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      toast.success("Message sent successfully", {
-        duration: 2000, // Show for 2 seconds only
+      // Show success toast
+      toast.success("Message sent", {
+        id: `message-sent-${Date.now()}`,
+        duration: 2000,
+        position: "top-center",
+        style: {
+          minWidth: "200px",
+          backgroundColor: "var(--success)",
+          color: "white",
+        },
       });
     } catch (error) {
-      if (sendingToast) {
-        toast.dismiss(sendingToast);
-        // Small delay before showing error to prevent toast overlap
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      const errorMessage =
-        error.response?.data?.error ||
-        error.message ||
-        "Failed to send message. Please try again";
-      toast.error(errorMessage, {
-        duration: 3000, // Show errors for 3 seconds
+      console.error("Error sending message:", error);
+      toast.error(error.response?.data?.error || "Failed to send message", {
+        id: `message-error-${Date.now()}`,
+        duration: 3000,
+        position: "top-center",
+        style: {
+          minWidth: "200px",
+          backgroundColor: "var(--error)",
+          color: "white",
+        },
       });
-      console.error("Failed to send message:", error);
     } finally {
       setIsProcessing(false);
+      setUploadProgress(0);
     }
   };
 
