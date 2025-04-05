@@ -1,7 +1,7 @@
 import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import cloudinary from "../lib/cloudinary.js";
+import uploadImage from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
   try {
@@ -138,8 +138,16 @@ export const updateProfile = async (req, res) => {
     const updateData = {};
 
     if (profilePic) {
-      const uploadResponse = await cloudinary.uploader.upload(profilePic);
-      updateData.profilePic = uploadResponse.secure_url;
+      try {
+        const uploadResponse = await uploadImage(profilePic);
+        updateData.profilePic = uploadResponse.secure_url;
+      } catch (uploadError) {
+        console.error("Error uploading to Cloudinary:", uploadError);
+        return res.status(400).json({
+          message:
+            "Failed to upload image. Please try a different image or compress it further.",
+        });
+      }
     }
 
     if (biography !== undefined) {

@@ -22,19 +22,72 @@ const ProfilePage = () => {
     confirmNewPassword: "",
   });
 
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions while maintaining aspect ratio
+          const maxDimension = 1200; // Max width or height
+          if (width > height && width > maxDimension) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          } else if (height > maxDimension) {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Get compressed image as base64 string
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8); // 0.8 quality
+          resolve(compressedBase64);
+        };
+      };
+    });
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading("Processing image...");
 
-    reader.readAsDataURL(file);
+      // Compress image if it's larger than 100KB
+      let base64Image;
+      if (file.size > 100 * 1024) {
+        // 100KB
+        base64Image = await compressImage(file);
+      } else {
+        const reader = new FileReader();
+        base64Image = await new Promise((resolve) => {
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
+      }
 
-    reader.onload = async () => {
-      const base64Image = reader.result;
       setSelectedImg(base64Image);
       await updateProfile({ profilePic: base64Image });
-    };
+
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast);
+      toast.success("Profile picture updated successfully");
+    } catch (error) {
+      toast.error("Failed to update profile picture");
+      console.error("Error uploading image:", error);
+    }
   };
 
   const handleChangePassword = async (e) => {

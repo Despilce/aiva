@@ -44,13 +44,9 @@ const UserProfileModal = ({ user, onClose }) => {
           )}
 
           {/* Additional info */}
-          <div className="bg-base-200 rounded-lg p-4 text-sm space-y-2">
-            <p>
-              <span className="text-base-content/60">Student ID: </span>
-              <span className="font-medium">{user.email.split("@")[0]}</span>
-            </p>
-            <p>
-              <span className="text-base-content/60">Member since: </span>
+          <div className="bg-base-200 rounded-lg p-4 text-sm">
+            <p className="flex items-center justify-between">
+              <span className="text-base-content/60">Member since</span>
               <span className="font-medium">{formatDate(user.createdAt)}</span>
             </p>
           </div>

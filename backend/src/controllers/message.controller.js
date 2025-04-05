@@ -1,8 +1,46 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
-
-import cloudinary from "../lib/cloudinary.js";
+import uploadImage from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
+import multer from "multer";
+
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
+const fileFilter = (req, file, cb) => {
+  // Accept only image files
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed"), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+}).single("image");
+
+// Wrap multer in a promise to handle errors better
+const handleUpload = (req, res) => {
+  return new Promise((resolve, reject) => {
+    upload(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          reject(new Error("File is too large. Maximum size is 10MB"));
+        } else {
+          reject(new Error("File upload error: " + err.message));
+        }
+      } else if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
 
 export const getUsersForSidebar = async (req, res) => {
   try {
@@ -39,15 +77,45 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    // Handle file upload first
+    await handleUpload(req, res);
+
+    const text = req.body.text;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
+    // Validate receiver exists
+    const receiver = await User.findById(receiverId);
+    if (!receiver) {
+      return res.status(404).json({ error: "Receiver not found" });
+    }
+
     let imageUrl;
-    if (image) {
-      // Upload base64 image to cloudinary
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
+    if (req.file) {
+      try {
+        // Convert buffer to base64
+        const base64Image = req.file.buffer.toString("base64");
+        const dataUri = `data:${req.file.mimetype};base64,${base64Image}`;
+
+        const uploadResponse = await uploadImage(dataUri);
+        if (!uploadResponse?.secure_url) {
+          throw new Error("Failed to get image URL from Cloudinary");
+        }
+        imageUrl = uploadResponse.secure_url;
+      } catch (uploadError) {
+        console.error("Error uploading to Cloudinary:", uploadError);
+        return res.status(400).json({
+          error:
+            "Failed to upload image. Please try again or use a different image.",
+        });
+      }
+    }
+
+    // Validate that either text or image is present
+    if (!text && !imageUrl) {
+      return res
+        .status(400)
+        .json({ error: "Message must contain either text or an image" });
     }
 
     const newMessage = new Message({
@@ -59,6 +127,7 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
+    // Emit socket event
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
@@ -66,8 +135,10 @@ export const sendMessage = async (req, res) => {
 
     res.status(201).json(newMessage);
   } catch (error) {
-    console.log("Error in sendMessage controller: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error in sendMessage controller:", error);
+    res
+      .status(error.status || 500)
+      .json({ error: error.message || "Failed to send message" });
   }
 };
 
