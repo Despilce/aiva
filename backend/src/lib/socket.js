@@ -44,11 +44,27 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle timer stop event
-  socket.on("timerStopped", ({ senderId, receiverId }) => {
+  // Handle timer pause event
+  socket.on("timerPaused", ({ senderId, receiverId, timeRemaining }) => {
     const receiverSocketId = userSocketMap[receiverId];
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("timerStopped", { senderId });
+      io.to(receiverSocketId).emit("timerPaused", { senderId, timeRemaining });
+    }
+  });
+
+  // Handle timer resume event
+  socket.on("timerResumed", ({ senderId, receiverId, timeRemaining }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("timerResumed", { senderId, timeRemaining });
+    }
+  });
+
+  // Handle timer total stop event
+  socket.on("timerTotalStopped", ({ senderId, receiverId }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("timerTotalStopped", { senderId });
     }
   });
 

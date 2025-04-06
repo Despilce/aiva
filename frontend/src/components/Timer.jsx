@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { Pause, Play, Square } from "lucide-react";
 
 const Timer = () => {
   const [timeLeft, setTimeLeft] = useState(30); // 30 seconds timer
   const [isRunning, setIsRunning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
   const { selectedUser } = useChatStore();
   const { socket, authUser } = useAuthStore();
@@ -12,7 +14,7 @@ const Timer = () => {
   useEffect(() => {
     let intervalId;
 
-    if (isRunning && timeLeft > 0) {
+    if (isRunning && !isPaused && timeLeft > 0) {
       intervalId = setInterval(() => {
         setTimeLeft((prevTime) => {
           if (prevTime <= 1) {
@@ -36,7 +38,7 @@ const Timer = () => {
         clearInterval(intervalId);
       }
     };
-  }, [isRunning, timeLeft, socket, authUser._id, selectedUser._id]);
+  }, [isRunning, isPaused, timeLeft, socket, authUser._id, selectedUser._id]);
 
   useEffect(() => {
     // Listen for timer start event
@@ -44,14 +46,34 @@ const Timer = () => {
       if (senderId !== authUser._id) {
         setTimeLeft(30);
         setIsRunning(true);
+        setIsPaused(false);
         setIsExpired(false);
       }
     });
 
-    // Listen for timer stop event
-    socket.on("timerStopped", ({ senderId }) => {
+    // Listen for timer pause event
+    socket.on("timerPaused", ({ senderId, timeRemaining }) => {
       if (senderId !== authUser._id) {
+        setTimeLeft(timeRemaining);
+        setIsPaused(true);
+      }
+    });
+
+    // Listen for timer resume event
+    socket.on("timerResumed", ({ senderId, timeRemaining }) => {
+      if (senderId !== authUser._id) {
+        setTimeLeft(timeRemaining);
+        setIsPaused(false);
+      }
+    });
+
+    // Listen for timer total stop event
+    socket.on("timerTotalStopped", ({ senderId }) => {
+      if (senderId !== authUser._id) {
+        setTimeLeft(30);
         setIsRunning(false);
+        setIsPaused(false);
+        setIsExpired(false);
       }
     });
 
@@ -60,19 +82,23 @@ const Timer = () => {
       if (senderId !== authUser._id) {
         setTimeLeft(0);
         setIsRunning(false);
+        setIsPaused(false);
         setIsExpired(true);
       }
     });
 
     return () => {
       socket.off("timerStarted");
-      socket.off("timerStopped");
+      socket.off("timerPaused");
+      socket.off("timerResumed");
+      socket.off("timerTotalStopped");
       socket.off("timerExpired");
     };
   }, [socket, authUser._id]);
 
   const startTimer = () => {
     setIsRunning(true);
+    setIsPaused(false);
     setIsExpired(false);
     setTimeLeft(30);
     // Emit timer start event
@@ -82,10 +108,33 @@ const Timer = () => {
     });
   };
 
-  const stopTimer = () => {
+  const pauseTimer = () => {
+    setIsPaused(true);
+    // Emit timer pause event with current time
+    socket.emit("timerPaused", {
+      senderId: authUser._id,
+      receiverId: selectedUser._id,
+      timeRemaining: timeLeft,
+    });
+  };
+
+  const resumeTimer = () => {
+    setIsPaused(false);
+    // Emit timer resume event with current time
+    socket.emit("timerResumed", {
+      senderId: authUser._id,
+      receiverId: selectedUser._id,
+      timeRemaining: timeLeft,
+    });
+  };
+
+  const totalStopTimer = () => {
+    setTimeLeft(30);
     setIsRunning(false);
-    // Emit timer stop event
-    socket.emit("timerStopped", {
+    setIsPaused(false);
+    setIsExpired(false);
+    // Emit timer total stop event
+    socket.emit("timerTotalStopped", {
       senderId: authUser._id,
       receiverId: selectedUser._id,
     });
@@ -116,18 +165,35 @@ const Timer = () => {
         {formatTime(timeLeft)}
       </div>
       {canControlTimer && (
-        <>
+        <div className="flex gap-2">
           {!isRunning && !isExpired && (
             <button onClick={startTimer} className="btn btn-sm btn-primary">
               Start Timer
             </button>
           )}
           {isRunning && (
-            <button onClick={stopTimer} className="btn btn-sm btn-error">
-              Stop Timer
-            </button>
+            <>
+              <button
+                onClick={isPaused ? resumeTimer : pauseTimer}
+                className="btn btn-sm btn-warning"
+                title={isPaused ? "Resume" : "Pause"}
+              >
+                {isPaused ? (
+                  <Play className="size-4" />
+                ) : (
+                  <Pause className="size-4" />
+                )}
+              </button>
+              <button
+                onClick={totalStopTimer}
+                className="btn btn-sm btn-error"
+                title="Stop"
+              >
+                <Square className="size-4" />
+              </button>
+            </>
           )}
-        </>
+        </div>
       )}
     </div>
   );
