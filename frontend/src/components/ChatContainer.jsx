@@ -6,6 +6,7 @@ import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import { ArrowLeft } from "lucide-react";
 import Message from "./Message";
+import Timer from "./Timer";
 
 const ChatContainer = () => {
   const {
@@ -48,6 +49,11 @@ const ChatContainer = () => {
     );
   }
 
+  // Check if the chat is between a student and staff
+  const isStudentStaffChat =
+    (authUser.userType === "student" && selectedUser.userType === "staff") ||
+    (authUser.userType === "staff" && selectedUser.userType === "student");
+
   return (
     <div
       className={`flex-1 flex flex-col overflow-auto ${
@@ -68,6 +74,13 @@ const ChatContainer = () => {
       )}
 
       <ChatHeader />
+
+      {/* Show timer only in student-staff chats */}
+      {isStudentStaffChat && (
+        <div className="border-b border-base-300">
+          <Timer />
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (

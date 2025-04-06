@@ -36,6 +36,30 @@ io.on("connection", (socket) => {
   // io.emit() is used to send events to all the connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
+  // Handle timer start event
+  socket.on("timerStarted", ({ senderId, receiverId }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("timerStarted", { senderId });
+    }
+  });
+
+  // Handle timer stop event
+  socket.on("timerStopped", ({ senderId, receiverId }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("timerStopped", { senderId });
+    }
+  });
+
+  // Handle timer expired event
+  socket.on("timerExpired", ({ senderId, receiverId }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("timerExpired", { senderId });
+    }
+  });
+
   socket.on("disconnect", async () => {
     console.log("A user disconnected", socket.id);
     if (userId) {
