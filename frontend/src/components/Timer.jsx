@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { Pause, Play, Square } from "lucide-react";
+import { axiosInstance } from "../lib/axios";
 
 const Timer = () => {
   const [timeLeft, setTimeLeft] = useState(30); // 30 seconds timer
@@ -25,6 +26,8 @@ const Timer = () => {
               senderId: authUser._id,
               receiverId: selectedUser._id,
             });
+            // Update staff performance metrics when timer expires
+            updateStaffPerformance(selectedUser._id, false);
             clearInterval(intervalId);
             return 0;
           }
@@ -39,6 +42,22 @@ const Timer = () => {
       }
     };
   }, [isRunning, isPaused, timeLeft, socket, authUser._id, selectedUser._id]);
+
+  const updateStaffPerformance = async (staffId, isSolved) => {
+    try {
+      console.log("Updating staff performance:", { staffId, isSolved });
+      const response = await axiosInstance.post(`/auth/update-performance`, {
+        staffId,
+        isSolved,
+      });
+      console.log("Performance update response:", response.data);
+    } catch (error) {
+      console.error(
+        "Error updating staff performance:",
+        error.response?.data || error
+      );
+    }
+  };
 
   useEffect(() => {
     // Listen for timer start event
@@ -129,6 +148,7 @@ const Timer = () => {
   };
 
   const totalStopTimer = () => {
+    console.log("Total stop timer clicked for staff:", selectedUser._id);
     setTimeLeft(30);
     setIsRunning(false);
     setIsPaused(false);
@@ -138,6 +158,8 @@ const Timer = () => {
       senderId: authUser._id,
       receiverId: selectedUser._id,
     });
+    // Update staff performance metrics when timer is stopped with "solved"
+    updateStaffPerformance(selectedUser._id, true);
   };
 
   const formatTime = (seconds) => {
@@ -187,9 +209,10 @@ const Timer = () => {
               <button
                 onClick={totalStopTimer}
                 className="btn btn-sm btn-error"
-                title="Stop"
+                title="Solved"
               >
                 <Square className="size-4" />
+                <span className="ml-1">Solved</span>
               </button>
             </>
           )}

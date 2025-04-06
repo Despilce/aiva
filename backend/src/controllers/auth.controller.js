@@ -281,3 +281,62 @@ export const changePassword = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const updateStaffPerformance = async (req, res) => {
+  try {
+    const { staffId, isSolved } = req.body;
+    console.log("Received performance update request:", { staffId, isSolved });
+
+    if (!staffId || typeof isSolved !== "boolean") {
+      console.log("Invalid request data:", { staffId, isSolved });
+      return res.status(400).json({ error: "Invalid request data" });
+    }
+
+    const staff = await User.findById(staffId);
+    console.log(
+      "Found staff:",
+      staff ? "yes" : "no",
+      "userType:",
+      staff?.userType
+    );
+
+    if (!staff || staff.userType !== "staff") {
+      return res.status(404).json({ error: "Staff member not found" });
+    }
+
+    // Update performance metrics
+    const currentMetrics = staff.performanceMetrics || {
+      percentage: 0,
+      totalIssues: 0,
+      solvedIssues: 0,
+    };
+    console.log("Current metrics before update:", currentMetrics);
+
+    // Increment total issues
+    currentMetrics.totalIssues += 1;
+
+    // If solved, increment solved issues
+    if (isSolved) {
+      currentMetrics.solvedIssues += 1;
+    }
+
+    // Calculate new percentage
+    currentMetrics.percentage = Math.round(
+      (currentMetrics.solvedIssues / currentMetrics.totalIssues) * 100
+    );
+    console.log("Updated metrics:", currentMetrics);
+
+    // Update staff's performance metrics
+    const updatedStaff = await User.findByIdAndUpdate(
+      staffId,
+      { performanceMetrics: currentMetrics },
+      { new: true }
+    ).select("-password");
+    console.log("Staff updated successfully:", updatedStaff.performanceMetrics);
+
+    res.status(200).json(updatedStaff);
+  } catch (error) {
+    console.error("Error updating staff performance:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
