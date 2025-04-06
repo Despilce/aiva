@@ -31,6 +31,41 @@ const UserProfileModal = ({ user, onClose }) => {
           <h2 className="text-2xl font-bold mb-1">{user.fullName}</h2>
           <p className="text-base-content/70 mb-4">{user.email}</p>
 
+          {/* Performance Metrics for Staff */}
+          {user.userType === "staff" && (
+            <div className="mb-6 p-4 bg-base-200 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4">
+                Performance Metrics
+              </h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div
+                    className="radial-progress text-primary"
+                    style={{
+                      "--value": user.performanceMetrics?.percentage || 0,
+                      "--size": "4rem",
+                    }}
+                  >
+                    {user.performanceMetrics?.percentage || 0}%
+                  </div>
+                  <p className="text-sm mt-2">Performance</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">
+                    {user.performanceMetrics?.totalIssues || 0}
+                  </div>
+                  <p className="text-sm">Total Issues</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">
+                    {user.performanceMetrics?.solvedIssues || 0}
+                  </div>
+                  <p className="text-sm">Solved Issues</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Biography */}
           {user.biography && (
             <div className="mb-4 text-left">

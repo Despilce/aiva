@@ -38,6 +38,28 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Performance metrics for staff
+    performanceMetrics: {
+      type: {
+        percentage: {
+          type: Number,
+          default: 0,
+        },
+        totalIssues: {
+          type: Number,
+          default: 0,
+        },
+        solvedIssues: {
+          type: Number,
+          default: 0,
+        },
+      },
+      default: {
+        percentage: 0,
+        totalIssues: 0,
+        solvedIssues: 0,
+      },
+    },
   },
   { timestamps: true }
 );
