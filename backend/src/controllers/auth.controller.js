@@ -46,19 +46,11 @@ export const signup = async (req, res) => {
   try {
     const { fullName, email, password, userType, position, department } =
       req.body;
+    console.log("Signup request:", { fullName, email, userType }); // Debug log
 
     // Basic validation
     if (!fullName || !email || !password || !userType) {
       return res.status(400).json({ error: "Please fill in all fields" });
-    }
-
-    // Additional validation for staff and managers
-    if (userType === "other") {
-      if (!position || !department) {
-        return res
-          .status(400)
-          .json({ error: "Position and department are required" });
-      }
     }
 
     // Validate email format based on user type
@@ -74,16 +66,16 @@ export const signup = async (req, res) => {
         });
       }
     } else if (userType === "other") {
-      // Staff/Manager email should be a valid email ending with @mdis.uz
+      // Staff/Manager validation
+      if (!position || !department) {
+        return res
+          .status(400)
+          .json({ error: "Position and department are required" });
+      }
       if (!email.endsWith("@mdis.uz")) {
         return res
           .status(400)
           .json({ error: "Email must be a valid MDIS email address" });
-      }
-      // Additional validation for staff/manager email if needed
-      const emailPrefix = email.split("@")[0];
-      if (emailPrefix.length < 3) {
-        return res.status(400).json({ error: "Invalid email format" });
       }
     } else {
       return res.status(400).json({ error: "Invalid user type" });
@@ -109,14 +101,21 @@ export const signup = async (req, res) => {
       fullName,
       email,
       password: hashedPassword,
-      userType: position === "Manager" ? "manager" : "staff", // Set userType based on position
+      userType:
+        userType === "student"
+          ? "student"
+          : position === "Manager"
+          ? "manager"
+          : "staff",
     };
 
+    // Add position and department for staff/manager
     if (userType === "other") {
       userData.position = position;
       userData.department = department;
     }
 
+    console.log("Creating user with data:", userData); // Debug log
     const user = await User.create(userData);
 
     // Generate token
@@ -132,7 +131,7 @@ export const signup = async (req, res) => {
       profilePic: user.profilePic,
     });
   } catch (error) {
-    console.error("Error in signup controller:", error.message);
+    console.error("Error in signup controller:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

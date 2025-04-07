@@ -12,6 +12,16 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
+// Debug middleware for auth routes
+router.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] Auth route accessed:`, {
+    method: req.method,
+    url: req.url,
+    body: req.method === "POST" ? req.body : undefined,
+  });
+  next();
+});
+
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", logout);
