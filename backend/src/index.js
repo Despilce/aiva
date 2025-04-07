@@ -26,12 +26,16 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+
+// Configure CORS based on environment
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === "production"
+      ? process.env.FRONTEND_URL || "https://your-frontend-url.com"
+      : "http://localhost:5173",
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 // Register routes
 app.use("/api/auth", authRouter);
@@ -52,14 +56,20 @@ app.get("/api/debug", (req, res) => {
 });
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  const frontendDistPath = path.join(__dirname, "../../frontend/dist");
+  console.log("Serving static files from:", frontendDistPath);
 
+  // Serve static files
+  app.use(express.static(frontendDistPath));
+
+  // Handle all other routes by serving the index.html
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+    res.sendFile(path.join(frontendDistPath, "index.html"));
   });
 }
 
 server.listen(PORT, () => {
-  console.log("server is running on PORT:" + PORT);
+  console.log(`Server is running on PORT: ${PORT}`);
+  console.log("Environment:", process.env.NODE_ENV);
   connectDB();
 });
