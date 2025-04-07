@@ -1,9 +1,14 @@
-const User = require("../models/user.model");
-const Issue = require("../models/issue.model");
+import User from "../models/user.model.js";
+import Issue from "../models/issue.model.js";
 
-const getDepartmentStats = async (req, res) => {
+export const getDepartmentStats = async (req, res) => {
   try {
     const { department } = req.params;
+    console.log("Fetching stats for department:", department);
+
+    if (!department) {
+      return res.status(400).json({ message: "Department is required" });
+    }
 
     // Get staff members in the department
     const staffMembers = await User.find({
@@ -11,8 +16,11 @@ const getDepartmentStats = async (req, res) => {
       userType: { $in: ["staff", "other"] },
     }).select("-password");
 
+    console.log(`Found ${staffMembers.length} staff members in department`);
+
     // Get all issues for the department
     const issues = await Issue.find({ department });
+    console.log(`Found ${issues.length} issues for department`);
 
     // Calculate total issues stats
     const totalIssues = issues.length;
@@ -96,7 +104,7 @@ const getDepartmentStats = async (req, res) => {
         b.performanceMetrics.percentage - a.performanceMetrics.percentage
     );
 
-    res.json({
+    const response = {
       totalStaff: staffMembers.length,
       totalIssues,
       solvedIssues,
@@ -104,13 +112,12 @@ const getDepartmentStats = async (req, res) => {
       pretendingIssues,
       performanceHistory,
       staffList,
-    });
+    };
+
+    console.log("Sending department stats response:", response);
+    res.json(response);
   } catch (error) {
-    console.error("Error fetching department stats:", error);
+    console.error("Error in getDepartmentStats:", error);
     res.status(500).json({ message: "Error fetching department statistics" });
   }
-};
-
-module.exports = {
-  getDepartmentStats,
 };

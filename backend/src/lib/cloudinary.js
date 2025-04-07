@@ -1,5 +1,4 @@
 import { v2 as cloudinary } from "cloudinary";
-
 import { config } from "dotenv";
 
 config();
@@ -23,7 +22,7 @@ const uploadConfig = {
 };
 
 // Wrapper function for uploading with our custom config
-const uploadImage = (imageString) => {
+export const uploadImage = (imageString) => {
   return new Promise((resolve, reject) => {
     cloudinary.uploader.upload(imageString, uploadConfig, (error, result) => {
       if (error) reject(error);
@@ -32,4 +31,4 @@ const uploadImage = (imageString) => {
   });
 };
 
-export { uploadImage as default, cloudinary };
+export { cloudinary };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import Sidebar from "../components/Sidebar";
@@ -11,7 +11,16 @@ const HomePage = () => {
   const { authUser } = useAuthStore();
   const { selectedUser, isMobileView } = useChatStore();
   const [showDashboard, setShowDashboard] = useState(false);
-  const isManager = authUser?.position === "Manager";
+  const isManager = authUser?.userType === "manager";
+
+  useEffect(() => {
+    console.log("Current user:", {
+      user: authUser,
+      userType: authUser?.userType,
+      department: authUser?.department,
+      isManager,
+    });
+  }, [authUser, isManager]);
 
   return (
     <div className="h-screen bg-base-200">

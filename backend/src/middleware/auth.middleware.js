@@ -6,7 +6,9 @@ export const protectRoute = async (req, res, next) => {
     const token = req.cookies.jwt;
 
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized - No Token Provided" });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized - No Token Provided" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -26,6 +28,20 @@ export const protectRoute = async (req, res, next) => {
     next();
   } catch (error) {
     console.log("Error in protectRoute middleware: ", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const isManager = async (req, res, next) => {
+  try {
+    if (!req.user || req.user.userType !== "manager") {
+      return res
+        .status(403)
+        .json({ message: "Access denied. Manager role required." });
+    }
+    next();
+  } catch (error) {
+    console.log("Error in isManager middleware: ", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };

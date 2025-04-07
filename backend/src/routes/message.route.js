@@ -16,4 +16,4 @@ router.get("/users/search", protectRoute, searchUsers);
 router.get("/:id", protectRoute, getMessages);
 router.post("/send/:id", protectRoute, sendMessage);
 
-export default router;
+export { router as messageRouter };

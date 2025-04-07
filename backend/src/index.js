@@ -2,19 +2,27 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-
 import path from "path";
-
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { connectDB } from "./lib/db.js";
 
-import authRoutes from "./routes/auth.route.js";
-import messageRoutes from "./routes/message.route.js";
+import { authRouter } from "./routes/auth.route.js";
+import { messageRouter } from "./routes/message.route.js";
+import { statsRouter } from "./routes/stats.route.js";
 import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT;
-const __dirname = path.resolve();
+const PORT = process.env.PORT || 5001;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Debug middleware for all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
 app.use(express.json());
 app.use(cookieParser());
@@ -25,8 +33,23 @@ app.use(
   })
 );
 
-app.use("/api/auth", authRoutes);
-app.use("/api/messages", messageRoutes);
+// Register routes
+app.use("/api/auth", authRouter);
+app.use("/api/messages", messageRouter);
+app.use("/api/stats", statsRouter);
+
+// Debug endpoint to check server status
+app.get("/api/debug", (req, res) => {
+  res.json({
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+    routes: {
+      auth: "/api/auth",
+      messages: "/api/messages",
+      stats: "/api/stats",
+    },
+  });
+});
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));

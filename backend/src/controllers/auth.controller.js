@@ -1,7 +1,7 @@
 import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import uploadImage from "../lib/cloudinary.js";
+import { uploadImage } from "../lib/cloudinary.js";
 import multer from "multer";
 
 // Configure multer for memory storage

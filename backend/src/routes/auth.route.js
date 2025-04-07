@@ -22,4 +22,4 @@ router.post("/update-performance", protectRoute, updateStaffPerformance);
 
 router.get("/check", protectRoute, checkAuth);
 
-export default router;
+export { router as authRouter };

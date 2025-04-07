@@ -20,22 +20,56 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5001;
 
-app.use(express.json()); // Parse JSON bodies
-app.use(cookieParser()); // Parse cookies
-app.use(cors()); // Enable CORS
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 
+// Middlewares
+app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "development" ? "http://localhost:5173" : true,
+    credentials: true,
+  })
+);
+
+// Debug middleware to log cookies
+app.use((req, res, next) => {
+  console.log("Cookies:", req.cookies);
+  next();
+});
+
+// Routes
+console.log("Registering routes...");
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/stats", statsRoutes);
+console.log("Routes registered successfully");
 
-app.use(express.static(path.join(__dirname, "../../frontend/dist")));
+// Serve static files in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../../frontend/dist")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
+  });
+}
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Global error handler:", err);
+  res
+    .status(500)
+    .json({ message: "Internal server error", error: err.message });
 });
 
+// Connect to MongoDB
+connectToMongoDB();
+
 server.listen(PORT, () => {
-  connectToMongoDB();
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
