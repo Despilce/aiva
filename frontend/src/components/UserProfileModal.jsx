@@ -1,8 +1,10 @@
 import { X } from "lucide-react";
 import { formatDate } from "../lib/utils";
 
-const UserProfileModal = ({ user, onClose }) => {
+const UserProfileModal = ({ user, onClose, isSelfView = false }) => {
   if (!user) return null;
+
+  const isStaff = user.userType === "staff";
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -28,39 +30,62 @@ const UserProfileModal = ({ user, onClose }) => {
           </div>
 
           {/* User info */}
-          <h2 className="text-2xl font-bold mb-1">{user.fullName}</h2>
-          <p className="text-base-content/70 mb-4">{user.email}</p>
+          <h2 className="text-2xl font-bold mb-1">
+            {user.fullName}
+            {isSelfView && " (You)"}
+          </h2>
+          <p className="text-base-content/70 mb-2">{user.email}</p>
 
-          {/* Performance Metrics for Staff */}
-          {user.userType === "staff" && (
-            <div className="mb-6 p-4 bg-base-200 rounded-lg">
-              <h3 className="text-lg font-semibold mb-4">
-                Performance Metrics
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div
-                    className="radial-progress text-primary"
-                    style={{
-                      "--value": user.performanceMetrics?.percentage || 0,
-                      "--size": "4rem",
-                    }}
-                  >
-                    {user.performanceMetrics?.percentage || 0}%
-                  </div>
-                  <p className="text-sm mt-2">Performance</p>
+          {/* User Type Badge */}
+          <div className="badge badge-primary mb-4">
+            {user.userType.charAt(0).toUpperCase() + user.userType.slice(1)}
+          </div>
+
+          {/* Staff-specific information */}
+          {isStaff && (
+            <div className="space-y-4">
+              {/* Department and Position */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-base-200 p-3 rounded-lg">
+                  <p className="text-sm text-base-content/70">Department</p>
+                  <p className="font-medium">{user.department}</p>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {user.performanceMetrics?.totalIssues || 0}
-                  </div>
-                  <p className="text-sm">Total Issues</p>
+                <div className="bg-base-200 p-3 rounded-lg">
+                  <p className="text-sm text-base-content/70">Position</p>
+                  <p className="font-medium">{user.position}</p>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {user.performanceMetrics?.solvedIssues || 0}
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="bg-base-200 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4">
+                  Performance Metrics
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div
+                      className="radial-progress text-primary mx-auto"
+                      style={{
+                        "--value": user.performanceMetrics?.percentage || 0,
+                        "--size": "4rem",
+                      }}
+                    >
+                      {user.performanceMetrics?.percentage || 0}%
+                    </div>
+                    <p className="text-sm mt-2">Success Rate</p>
                   </div>
-                  <p className="text-sm">Solved Issues</p>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">
+                      {user.performanceMetrics?.totalIssues || 0}
+                    </div>
+                    <p className="text-sm">Total Issues</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">
+                      {user.performanceMetrics?.solvedIssues || 0}
+                    </div>
+                    <p className="text-sm">Solved Issues</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -68,7 +93,7 @@ const UserProfileModal = ({ user, onClose }) => {
 
           {/* Biography */}
           {user.biography && (
-            <div className="mb-4 text-left">
+            <div className="mt-4 text-left">
               <h3 className="text-sm font-medium text-base-content/70 mb-1">
                 Biography
               </h3>
@@ -78,12 +103,9 @@ const UserProfileModal = ({ user, onClose }) => {
             </div>
           )}
 
-          {/* Additional info */}
-          <div className="bg-base-200 rounded-lg p-4 text-sm">
-            <p className="flex items-center justify-between">
-              <span className="text-base-content/60">Member since</span>
-              <span className="font-medium">{formatDate(user.createdAt)}</span>
-            </p>
+          {/* Join Date */}
+          <div className="mt-6 text-sm text-base-content/60">
+            Joined {formatDate(user.createdAt)}
           </div>
         </div>
       </div>

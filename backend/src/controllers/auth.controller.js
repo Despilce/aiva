@@ -44,11 +44,21 @@ const handleUpload = (req, res) => {
 
 export const signup = async (req, res) => {
   try {
-    const { fullName, email, password, userType } = req.body;
+    const { fullName, email, password, userType, position, department } =
+      req.body;
 
     // Basic validation
     if (!fullName || !email || !password || !userType) {
       return res.status(400).json({ error: "Please fill in all fields" });
+    }
+
+    // Additional validation for staff
+    if (userType === "staff") {
+      if (!position || !department) {
+        return res
+          .status(400)
+          .json({ error: "Position and department are required for staff" });
+      }
     }
 
     // Validate email format based on user type
@@ -94,13 +104,20 @@ export const signup = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
-    const user = await User.create({
+    // Create user with position and department for staff
+    const userData = {
       fullName,
       email,
       password: hashedPassword,
       userType,
-    });
+    };
+
+    if (userType === "staff") {
+      userData.position = position;
+      userData.department = department;
+    }
+
+    const user = await User.create(userData);
 
     // Generate token
     generateToken(user._id, res);
@@ -110,6 +127,8 @@ export const signup = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       userType: user.userType,
+      position: user.position,
+      department: user.department,
       profilePic: user.profilePic,
     });
   } catch (error) {

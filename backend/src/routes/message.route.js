@@ -5,13 +5,14 @@ import {
   getUsersWithChats,
   searchUsers,
   sendMessage,
+  getUsersForSidebar,
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
 
+router.get("/users/sidebar", protectRoute, getUsersForSidebar);
 router.get("/users/chats", protectRoute, getUsersWithChats);
 router.get("/users/search", protectRoute, searchUsers);
-router.get("/users", protectRoute, getUsersWithChats);
 router.get("/:id", protectRoute, getMessages);
 router.post("/send/:id", protectRoute, sendMessage);
 

@@ -22,6 +22,8 @@ const SignUpPage = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    position: "Staff",
+    department: "SSU(Student Support Unit)",
   });
 
   const handleSubmit = async (e) => {
@@ -51,6 +53,11 @@ const SignUpPage = () => {
           return;
         }
       } else {
+        // Staff validation
+        if (!inputs.position || !inputs.department) {
+          toast.error("Please select both position and department");
+          return;
+        }
         // Staff email validation - just check minimum length
         if (inputs.email.length < 3) {
           toast.error("Email prefix must be at least 3 characters");
@@ -66,12 +73,21 @@ const SignUpPage = () => {
           ? inputs.email
           : `${inputs.email}@mdis.uz`;
 
-      await signup({
+      // Create signup data object
+      const signupData = {
         fullName: inputs.fullName.trim(),
         email,
         password: inputs.password,
         userType,
-      });
+      };
+
+      // Add position and department for staff
+      if (userType === "staff") {
+        signupData.position = inputs.position;
+        signupData.department = inputs.department;
+      }
+
+      await signup(signupData);
     } catch (error) {
       console.error("Signup error:", error);
       // The error message will be shown by the toast notification in the store
@@ -190,6 +206,54 @@ const SignUpPage = () => {
                 )}
               </div>
             </div>
+
+            {/* Position and Department Fields (for staff only) */}
+            {userType === "staff" && (
+              <>
+                {/* Position Field */}
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium">Position</span>
+                  </label>
+                  <select
+                    className="select select-bordered w-full"
+                    value={inputs.position}
+                    onChange={(e) =>
+                      setInputs({ ...inputs, position: e.target.value })
+                    }
+                  >
+                    <option value="Staff">Staff</option>
+                    <option value="Manager">Manager</option>
+                  </select>
+                </div>
+
+                {/* Department Field */}
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium">Department</span>
+                  </label>
+                  <select
+                    className="select select-bordered w-full"
+                    value={inputs.department}
+                    onChange={(e) =>
+                      setInputs({ ...inputs, department: e.target.value })
+                    }
+                  >
+                    <option value="SSU(Student Support Unit)">
+                      SSU(Student Support Unit)
+                    </option>
+                    <option value="IT department">IT department</option>
+                    <option value="EU(Exam Unit)">EU(Exam Unit)</option>
+                    <option value="LRC(Learning Resource Center)">
+                      LRC(Learning Resource Center)
+                    </option>
+                    <option value="CR(Central Registry)">
+                      CR(Central Registry)
+                    </option>
+                  </select>
+                </div>
+              </>
+            )}
 
             {/* Password Field */}
             <div className="form-control">

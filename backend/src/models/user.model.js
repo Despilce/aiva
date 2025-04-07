@@ -30,6 +30,26 @@ const userSchema = new mongoose.Schema(
       enum: ["student", "staff"],
       required: true,
     },
+    position: {
+      type: String,
+      enum: ["Staff", "Manager"],
+      required: function () {
+        return this.userType === "staff";
+      },
+    },
+    department: {
+      type: String,
+      enum: [
+        "SSU(Student Support Unit)",
+        "IT department",
+        "EU(Exam Unit)",
+        "LRC(Learning Resource Center)",
+        "CR(Central Registry)",
+      ],
+      required: function () {
+        return this.userType === "staff";
+      },
+    },
     lastSeen: {
       type: Date,
       default: Date.now,

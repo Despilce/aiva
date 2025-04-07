@@ -6,6 +6,7 @@ import { useAuthStore } from "./useAuthStore";
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [], // Users with existing chats
+  allUsers: [], // All users for department filtering
   searchResults: [], // Search results from all users
   selectedUser: null,
   isUsersLoading: false,
@@ -16,8 +17,13 @@ export const useChatStore = create((set, get) => ({
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
-      const res = await axiosInstance.get("/messages/users/chats");
-      set({ users: res.data });
+      // Get users with existing chats
+      const chatsRes = await axiosInstance.get("/messages/users/chats");
+      set({ users: chatsRes.data });
+
+      // Also fetch all users for department filtering
+      const allUsersRes = await axiosInstance.get("/messages/users/sidebar");
+      set({ allUsers: allUsersRes.data });
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
