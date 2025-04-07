@@ -250,6 +250,9 @@ const SignUpPage = () => {
                     <option value="CR(Central Registry)">
                       CR(Central Registry)
                     </option>
+                    <option value="Academic department">
+                      Academic department
+                    </option>
                   </select>
                 </div>
               </>

@@ -45,6 +45,7 @@ const userSchema = new mongoose.Schema(
         "EU(Exam Unit)",
         "LRC(Learning Resource Center)",
         "CR(Central Registry)",
+        "Academic department",
       ],
       required: function () {
         return this.userType === "staff";

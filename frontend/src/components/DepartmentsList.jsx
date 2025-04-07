@@ -36,6 +36,13 @@ const departments = [
     bgColor: "#DC2626", // Red
     type: "letter",
   },
+  {
+    id: "Academic department",
+    name: "AC",
+    fullName: "Academic Staff",
+    bgColor: "#9333EA", // Purple
+    type: "letter",
+  },
 ];
 
 const DepartmentsList = ({ onDepartmentSelect, selectedDepartment }) => {
