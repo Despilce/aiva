@@ -10,8 +10,15 @@ import { LayoutDashboard } from "lucide-react";
 const HomePage = () => {
   const { authUser } = useAuthStore();
   const { selectedUser, isMobileView } = useChatStore();
-  const [showDashboard, setShowDashboard] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(() => {
+    const saved = localStorage.getItem("showDashboard");
+    return saved ? JSON.parse(saved) : false;
+  });
   const isManager = authUser?.userType === "manager";
+
+  useEffect(() => {
+    localStorage.setItem("showDashboard", JSON.stringify(showDashboard));
+  }, [showDashboard]);
 
   useEffect(() => {
     console.log("Current user:", {
@@ -21,6 +28,13 @@ const HomePage = () => {
       isManager,
     });
   }, [authUser, isManager]);
+
+  // Reset dashboard view if user is not a manager
+  useEffect(() => {
+    if (!isManager) {
+      setShowDashboard(false);
+    }
+  }, [isManager]);
 
   return (
     <div className="h-screen bg-base-200">
