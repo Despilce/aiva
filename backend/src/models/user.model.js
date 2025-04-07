@@ -27,14 +27,14 @@ const userSchema = new mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ["student", "staff"],
+      enum: ["student", "staff", "manager"],
       required: true,
     },
     position: {
       type: String,
       enum: ["Staff", "Manager"],
       required: function () {
-        return this.userType === "staff";
+        return this.userType === "staff" || this.userType === "manager";
       },
     },
     department: {
@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema(
         "Academic department",
       ],
       required: function () {
-        return this.userType === "staff";
+        return this.userType === "staff" || this.userType === "manager";
       },
     },
     lastSeen: {

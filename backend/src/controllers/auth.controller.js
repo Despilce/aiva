@@ -52,12 +52,12 @@ export const signup = async (req, res) => {
       return res.status(400).json({ error: "Please fill in all fields" });
     }
 
-    // Additional validation for staff
-    if (userType === "staff") {
+    // Additional validation for staff and managers
+    if (userType === "other") {
       if (!position || !department) {
         return res
           .status(400)
-          .json({ error: "Position and department are required for staff" });
+          .json({ error: "Position and department are required" });
       }
     }
 
@@ -73,17 +73,17 @@ export const signup = async (req, res) => {
           error: "Student ID should start with 'b' followed by 7 digits",
         });
       }
-    } else if (userType === "staff") {
-      // Staff email should be a valid email ending with @mdis.uz
+    } else if (userType === "other") {
+      // Staff/Manager email should be a valid email ending with @mdis.uz
       if (!email.endsWith("@mdis.uz")) {
         return res
           .status(400)
-          .json({ error: "Staff email must be a valid MDIS email address" });
+          .json({ error: "Email must be a valid MDIS email address" });
       }
-      // Additional validation for staff email if needed
-      const staffEmailPrefix = email.split("@")[0];
-      if (staffEmailPrefix.length < 3) {
-        return res.status(400).json({ error: "Invalid staff email format" });
+      // Additional validation for staff/manager email if needed
+      const emailPrefix = email.split("@")[0];
+      if (emailPrefix.length < 3) {
+        return res.status(400).json({ error: "Invalid email format" });
       }
     } else {
       return res.status(400).json({ error: "Invalid user type" });
@@ -104,15 +104,15 @@ export const signup = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user with position and department for staff
+    // Create user data object
     const userData = {
       fullName,
       email,
       password: hashedPassword,
-      userType,
+      userType: position === "Manager" ? "manager" : "staff", // Set userType based on position
     };
 
-    if (userType === "staff") {
+    if (userType === "other") {
       userData.position = position;
       userData.department = department;
     }
@@ -146,15 +146,25 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: "Please fill in all fields" });
     }
 
-    // Find user and validate user type
+    // Find user
     const user = await User.findOne({ email });
-    if (!user || user.userType !== userType) {
+    if (!user) {
       return res.status(400).json({
         error:
           userType === "student"
             ? "Invalid student ID or password"
             : "Invalid email or password",
       });
+    }
+
+    // For staff login through "Other" tab, check if user is either staff or manager
+    if (userType === "other" && !["staff", "manager"].includes(user.userType)) {
+      return res.status(400).json({ error: "Invalid account type" });
+    }
+
+    // For student login, ensure user is a student
+    if (userType === "student" && user.userType !== "student") {
+      return res.status(400).json({ error: "Invalid student ID or password" });
     }
 
     // Check password
@@ -171,6 +181,8 @@ export const login = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       userType: user.userType,
+      position: user.position,
+      department: user.department,
       profilePic: user.profilePic,
     });
   } catch (error) {

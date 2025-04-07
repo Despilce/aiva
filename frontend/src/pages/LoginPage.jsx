@@ -96,14 +96,14 @@ const LoginPage = () => {
             </button>
             <button
               className={`flex-1 py-2 px-4 rounded-md transition-colors ${
-                userType === "staff"
+                userType === "other"
                   ? "bg-primary text-primary-content"
                   : "hover:bg-base-300"
               }`}
-              onClick={() => setUserType("staff")}
+              onClick={() => setUserType("other")}
               type="button"
             >
-              Staff
+              Other
             </button>
           </div>
 
@@ -113,7 +113,11 @@ const LoginPage = () => {
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">
-                  {userType === "student" ? "Student ID" : "Email Address"}
+                  {userType === "student"
+                    ? "Student ID"
+                    : userType === "staff"
+                    ? "Email Address"
+                    : "Manager ID"}
                 </span>
               </label>
               <div className="relative">
@@ -127,7 +131,9 @@ const LoginPage = () => {
                   placeholder={
                     userType === "student"
                       ? "Enter your student ID (e.g., b2102387)"
-                      : "Enter your email address"
+                      : userType === "staff"
+                      ? "Enter your email address"
+                      : "Enter your manager ID"
                   }
                   value={inputs.email}
                   onChange={(e) =>

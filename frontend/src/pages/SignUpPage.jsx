@@ -53,12 +53,12 @@ const SignUpPage = () => {
           return;
         }
       } else {
-        // Staff validation
+        // Staff/Manager validation
         if (!inputs.position || !inputs.department) {
           toast.error("Please select both position and department");
           return;
         }
-        // Staff email validation - just check minimum length
+        // Email validation - just check minimum length
         if (inputs.email.length < 3) {
           toast.error("Email prefix must be at least 3 characters");
           return;
@@ -81,8 +81,8 @@ const SignUpPage = () => {
         userType,
       };
 
-      // Add position and department for staff
-      if (userType === "staff") {
+      // Add position and department for staff/manager
+      if (userType === "other") {
         signupData.position = inputs.position;
         signupData.department = inputs.department;
       }
@@ -133,14 +133,14 @@ const SignUpPage = () => {
             </button>
             <button
               className={`flex-1 py-2 px-4 rounded-md transition-colors ${
-                userType === "staff"
+                userType === "other"
                   ? "bg-primary text-primary-content"
                   : "hover:bg-base-300"
               }`}
-              onClick={() => setUserType("staff")}
+              onClick={() => setUserType("other")}
               type="button"
             >
-              Staff
+              Other
             </button>
           </div>
 
@@ -199,7 +199,7 @@ const SignUpPage = () => {
                     setInputs({ ...inputs, email: e.target.value.trim() })
                   }
                 />
-                {userType === "staff" && !inputs.email.includes("@") && (
+                {userType === "other" && !inputs.email.includes("@") && (
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50">
                     @mdis.uz
                   </span>
@@ -208,7 +208,7 @@ const SignUpPage = () => {
             </div>
 
             {/* Position and Department Fields (for staff only) */}
-            {userType === "staff" && (
+            {userType === "other" && (
               <>
                 {/* Position Field */}
                 <div className="form-control">
