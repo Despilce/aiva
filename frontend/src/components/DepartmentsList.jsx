@@ -75,7 +75,7 @@ const DepartmentsList = ({ onDepartmentSelect, selectedDepartment }) => {
     if (!isScrolling || !scrollContainerRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX) * 0.75;
+    const walk = (x - startX) * 0.5;
     scrollContainerRef.current.scrollLeft = scrollLeft - walk;
   };
 
