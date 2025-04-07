@@ -9,8 +9,9 @@ import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import userRoutes from "./routes/user.route.js";
 import statsRoutes from "./routes/stats.route.js";
+import issueRoutes from "./routes/issue.route.js";
 
-import connectToMongoDB from "./db/connectToMongoDB.js";
+import { connectDB } from "./lib/db.js";
 import { app, server } from "./socket/socket.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,6 +50,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/issues", issueRoutes);
 console.log("Routes registered successfully");
 
 // Serve static files in production
@@ -68,7 +70,7 @@ app.use((err, req, res, next) => {
 });
 
 // Connect to MongoDB
-connectToMongoDB();
+connectDB();
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

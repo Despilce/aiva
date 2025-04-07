@@ -28,14 +28,14 @@ const ManagerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [showIssuesModal, setShowIssuesModal] = useState(false);
-  const [filter, setFilter] = useState("all"); // all, solved, unsolved, pretending
+  const [filter, setFilter] = useState("all"); // all, solved, unsolved, pending
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [departmentStats, setDepartmentStats] = useState({
     totalStaff: 0,
     totalIssues: 0,
     solvedIssues: 0,
     unsolvedIssues: 0,
-    pretendingIssues: 0,
+    pendingIssues: 0,
     performanceHistory: [],
     staffList: [],
     detailedIssues: [],
@@ -71,7 +71,7 @@ const ManagerDashboard = () => {
             totalIssues: response.data.totalIssues,
             solvedIssues: response.data.solvedIssues,
             unsolvedIssues: response.data.unsolvedIssues,
-            pretendingIssues: response.data.pretendingIssues,
+            pendingIssues: response.data.pendingIssues,
             performanceHistory: response.data.performanceHistory,
             staffList: response.data.staffList,
             detailedIssuesCount: response.data.detailedIssues?.length || 0,
@@ -94,23 +94,24 @@ const ManagerDashboard = () => {
               totalIssues: 10, // 6 + 4
               solvedIssues: 8, // 5 + 3
               unsolvedIssues: 2, // 1 + 1
+              pendingIssues: 0, // No pending issues initially
               staffList: response.data.staffList.map((staff) => {
                 if (staff.fullName === "SSU staff 1") {
                   return {
                     ...staff,
                     performanceMetrics: {
-                      totalIssues: 6,
+                      totalIssues: 6, // Matches what we see in profile
                       solvedIssues: 5,
-                      percentage: 83,
+                      percentage: 83, // 5/6 = ~83%
                     },
                   };
                 } else if (staff.fullName === "SSU staff 2") {
                   return {
                     ...staff,
                     performanceMetrics: {
-                      totalIssues: 4,
+                      totalIssues: 4, // Matches what we see in profile
                       solvedIssues: 3,
-                      percentage: 75,
+                      percentage: 75, // 3/4 = 75%
                     },
                   };
                 }
@@ -154,7 +155,7 @@ const ManagerDashboard = () => {
                   description:
                     "This is a mock issue created for testing purposes.",
                   status: "unsolved",
-                  priority: "high",
+                  priority: "medium",
                   createdAt: new Date(
                     Date.now() -
                       Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)
@@ -251,10 +252,10 @@ const ManagerDashboard = () => {
 
           const mockData = {
             totalStaff: 2,
-            totalIssues: 10,
+            totalIssues: 12,
             solvedIssues: 8,
             unsolvedIssues: 2,
-            pretendingIssues: 0,
+            pendingIssues: 2,
             performanceHistory: [
               { date: "2025-04-01", performance: 80 },
               { date: "2025-04-02", performance: 75 },
@@ -270,9 +271,9 @@ const ManagerDashboard = () => {
                 fullName: "SSU staff 1",
                 email: "ssustaff1@mdis.uz",
                 performanceMetrics: {
-                  totalIssues: 6,
+                  totalIssues: 7,
                   solvedIssues: 5,
-                  percentage: 83,
+                  percentage: 71,
                 },
               },
               {
@@ -280,9 +281,9 @@ const ManagerDashboard = () => {
                 fullName: "SSU staff 2",
                 email: "ssustaff2@mdis.uz",
                 performanceMetrics: {
-                  totalIssues: 4,
+                  totalIssues: 5,
                   solvedIssues: 3,
-                  percentage: 75,
+                  percentage: 60,
                 },
               },
             ],
@@ -338,6 +339,29 @@ const ManagerDashboard = () => {
                 },
                 commentsCount: 2,
               },
+              {
+                _id: `mock-pending-staff1-1`,
+                title: `Ongoing Issue for SSU staff 1`,
+                description:
+                  "This is a mock issue that's currently in the pending state.",
+                status: "pending",
+                priority: "medium",
+                createdAt: new Date(
+                  Date.now() -
+                    Math.floor(Math.random() * 3 * 24 * 60 * 60 * 1000)
+                ),
+                createdBy: {
+                  _id: "mock-student",
+                  fullName: "Student User",
+                  email: "student@example.com",
+                },
+                assignedTo: {
+                  _id: staff1Id,
+                  fullName: "SSU staff 1",
+                  email: "ssustaff1@mdis.uz",
+                },
+                commentsCount: 3,
+              },
 
               // Add mock issues for staff 2 (3 solved, 1 unsolved)
               ...Array(3)
@@ -390,6 +414,29 @@ const ManagerDashboard = () => {
                 },
                 commentsCount: 1,
               },
+              {
+                _id: `mock-pending-staff2-1`,
+                title: `Ongoing Issue for SSU staff 2`,
+                description:
+                  "This is a mock issue that's currently in the pending state.",
+                status: "pending",
+                priority: "high",
+                createdAt: new Date(
+                  Date.now() -
+                    Math.floor(Math.random() * 2 * 24 * 60 * 60 * 1000)
+                ),
+                createdBy: {
+                  _id: "mock-student",
+                  fullName: "Student User",
+                  email: "student@example.com",
+                },
+                assignedTo: {
+                  _id: staff2Id,
+                  fullName: "SSU staff 2",
+                  email: "ssustaff2@mdis.uz",
+                },
+                commentsCount: 4,
+              },
             ],
           };
 
@@ -407,8 +454,8 @@ const ManagerDashboard = () => {
 
     if (authUser?.department) {
       fetchDepartmentStats();
-      // Fetch stats every 30 seconds
-      const interval = setInterval(fetchDepartmentStats, 30000);
+      // Fetch stats every 1 minute (changed from 30 seconds)
+      const interval = setInterval(fetchDepartmentStats, 60000);
       return () => clearInterval(interval);
     }
   }, [authUser?.department]);
@@ -427,11 +474,35 @@ const ManagerDashboard = () => {
 
     let issues = departmentStats.detailedIssues;
 
-    // If staff is selected, filter by staff
+    // If staff is selected, filter by staff - add a debug log
     if (selectedStaff) {
+      console.log("Filtering issues for staff:", {
+        staffId: selectedStaff._id,
+        staffName: selectedStaff.fullName,
+        allIssues: departmentStats.detailedIssues.length,
+        issueAssignments: departmentStats.detailedIssues.map((issue) => ({
+          issueId: issue._id,
+          assignedTo: issue.assignedTo?._id,
+          matches:
+            issue.assignedTo && issue.assignedTo._id === selectedStaff._id,
+        })),
+      });
+
+      // Use a more relaxed comparison for mock data (string IDs might not match exactly)
       issues = issues.filter(
         (issue) =>
-          issue.assignedTo && issue.assignedTo._id === selectedStaff._id
+          issue.assignedTo &&
+          (issue.assignedTo._id === selectedStaff._id ||
+            (issue.assignedTo._id
+              .toString()
+              .includes(
+                selectedStaff.fullName.replace(/\s+/g, "").toLowerCase()
+              ) &&
+              selectedStaff._id
+                .toString()
+                .includes(
+                  issue.assignedTo.fullName.replace(/\s+/g, "").toLowerCase()
+                )))
       );
     }
 
@@ -440,8 +511,8 @@ const ManagerDashboard = () => {
       return issues.filter((issue) => issue.status === "solved");
     } else if (filter === "unsolved") {
       return issues.filter((issue) => issue.status === "unsolved");
-    } else if (filter === "pretending") {
-      return issues.filter((issue) => issue.status === "pretending");
+    } else if (filter === "pending") {
+      return issues.filter((issue) => issue.status === "pending");
     }
 
     return issues;
@@ -453,10 +524,175 @@ const ManagerDashboard = () => {
         return <CheckCircle className="text-success size-4" />;
       case "unsolved":
         return <AlertTriangle className="text-error size-4" />;
-      case "pretending":
+      case "pending":
         return <Clock className="text-warning size-4" />;
       default:
         return null;
+    }
+  };
+
+  // Add a new function for creating real issues
+  const handleCreateRealIssues = async () => {
+    try {
+      setIsLoading(true);
+      toast.loading("Creating real issues in the database...");
+
+      // Convert mock issues to real issues in the database
+      await axiosInstance.post("/issues/createTestIssues", {
+        department: authUser.department,
+        issues: departmentStats.detailedIssues.map((issue) => ({
+          title: issue.title,
+          description: issue.description,
+          status: issue.status,
+          priority: issue.priority,
+          assignedTo: issue.assignedTo?._id,
+          // Note: In a real scenario, createdBy would be a student ID
+          comments: Array(issue.commentsCount || 0)
+            .fill()
+            .map((_, i) => ({
+              text: `Example comment ${i + 1} on this issue.`,
+              createdBy: issue.assignedTo?._id, // For simplicity, make the staff respond to their own issues
+            })),
+        })),
+      });
+
+      toast.dismiss();
+      toast.success("Test issues created successfully!");
+      fetchDepartmentStats(); // Refresh to show the real issues
+    } catch (error) {
+      console.error("Error creating test issues:", error);
+      toast.dismiss();
+      toast.error("Failed to create test issues. See console for details.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update the handleUpdateIssueStatus function
+  const handleUpdateIssueStatus = async (issueId, newStatus) => {
+    if (!issueId) return;
+
+    try {
+      setIsLoading(true);
+      toast.loading(`Updating issue status to ${newStatus}...`);
+
+      // Check if this is a mock issue (starts with "mock-") or a real MongoDB ID
+      const isMockIssue = issueId.toString().startsWith("mock-");
+
+      if (isMockIssue) {
+        // For mock issues, just update the local state
+        setTimeout(() => {
+          // Update the issue status in the local state
+          const updatedIssues = departmentStats.detailedIssues.map((issue) => {
+            if (issue._id === issueId) {
+              return {
+                ...issue,
+                status: newStatus,
+              };
+            }
+            return issue;
+          });
+
+          // Update department stats based on status changes
+          let newSolvedCount = departmentStats.solvedIssues;
+          let newUnsolvedCount = departmentStats.unsolvedIssues;
+          let newPendingCount = departmentStats.pendingIssues;
+
+          const currentIssue = departmentStats.detailedIssues.find(
+            (i) => i._id === issueId
+          );
+          if (currentIssue) {
+            // Decrement the old status count
+            if (currentIssue.status === "solved") newSolvedCount--;
+            else if (currentIssue.status === "unsolved") newUnsolvedCount--;
+            else if (currentIssue.status === "pending") newPendingCount--;
+
+            // Increment the new status count
+            if (newStatus === "solved") newSolvedCount++;
+            else if (newStatus === "unsolved") newUnsolvedCount++;
+            else if (newStatus === "pending") newPendingCount++;
+          }
+
+          // Update the department stats
+          setDepartmentStats({
+            ...departmentStats,
+            solvedIssues: newSolvedCount,
+            unsolvedIssues: newUnsolvedCount,
+            pendingIssues: newPendingCount,
+            detailedIssues: updatedIssues,
+          });
+
+          toast.dismiss();
+          toast.success(`Issue marked as ${newStatus}`);
+          setIsLoading(false);
+        }, 1000); // Simulate a 1-second API call
+      } else {
+        // For real MongoDB issues, send an API request
+        try {
+          // Add a comment about the status change
+          const statusChangeMessage = `Issue status changed to ${newStatus}`;
+
+          await axiosInstance.put(`/issues/${issueId}/status`, {
+            status: newStatus,
+            comment: statusChangeMessage,
+          });
+
+          // Update the UI after successful API call
+          const updatedIssues = departmentStats.detailedIssues.map((issue) => {
+            if (issue._id === issueId) {
+              return {
+                ...issue,
+                status: newStatus,
+                commentsCount: (issue.commentsCount || 0) + 1,
+              };
+            }
+            return issue;
+          });
+
+          // Update department stats based on status changes
+          let newSolvedCount = departmentStats.solvedIssues;
+          let newUnsolvedCount = departmentStats.unsolvedIssues;
+          let newPendingCount = departmentStats.pendingIssues;
+
+          const currentIssue = departmentStats.detailedIssues.find(
+            (i) => i._id === issueId
+          );
+          if (currentIssue) {
+            // Decrement the old status count
+            if (currentIssue.status === "solved") newSolvedCount--;
+            else if (currentIssue.status === "unsolved") newUnsolvedCount--;
+            else if (currentIssue.status === "pending") newPendingCount--;
+
+            // Increment the new status count
+            if (newStatus === "solved") newSolvedCount++;
+            else if (newStatus === "unsolved") newUnsolvedCount++;
+            else if (newStatus === "pending") newPendingCount++;
+          }
+
+          // Update the department stats
+          setDepartmentStats({
+            ...departmentStats,
+            solvedIssues: newSolvedCount,
+            unsolvedIssues: newUnsolvedCount,
+            pendingIssues: newPendingCount,
+            detailedIssues: updatedIssues,
+          });
+
+          toast.dismiss();
+          toast.success(`Issue marked as ${newStatus}`);
+        } catch (error) {
+          console.error("Error updating issue status:", error);
+          toast.dismiss();
+          toast.error("Failed to update issue status");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    } catch (error) {
+      console.error(`Error updating issue status to ${newStatus}:`, error);
+      toast.dismiss();
+      toast.error("Failed to update issue status. See console for details.");
+      setIsLoading(false);
     }
   };
 
@@ -484,9 +720,17 @@ const ManagerDashboard = () => {
   return (
     <div className="min-h-screen bg-base-200 p-4 md:p-6 overflow-y-auto">
       <div className="max-w-7xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold mb-6">
-          {authUser?.department} Dashboard
-        </h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold mb-6">
+            {authUser?.department} Dashboard
+          </h1>
+          <button
+            className="btn btn-sm btn-primary mb-6"
+            onClick={handleCreateRealIssues}
+          >
+            Create Real Issues
+          </button>
+        </div>
 
         {/* Department Overview */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -538,16 +782,14 @@ const ManagerDashboard = () => {
           <div
             className="stat bg-base-100 rounded-lg p-4 shadow-md cursor-pointer hover:bg-base-200"
             onClick={() => {
-              setFilter("pretending");
+              setFilter("pending");
               setSelectedStaff(null);
               setShowIssuesModal(true);
             }}
           >
-            <div className="stat-title text-xs md:text-sm">
-              Pretending Issues
-            </div>
+            <div className="stat-title text-xs md:text-sm">Pending Issues</div>
             <div className="stat-value text-lg md:text-2xl text-warning">
-              {departmentStats.pretendingIssues}
+              {departmentStats.pendingIssues}
             </div>
           </div>
         </div>
@@ -663,7 +905,7 @@ const ManagerDashboard = () => {
                         ? "Solved"
                         : filter === "unsolved"
                         ? "Unsolved"
-                        : "Pretending"
+                        : "Pending"
                     } Issues`}
               </h3>
               <div className="flex items-center gap-2">
@@ -687,9 +929,7 @@ const ManagerDashboard = () => {
                       </a>
                     </li>
                     <li>
-                      <a onClick={() => setFilter("pretending")}>
-                        Pretending Issues
-                      </a>
+                      <a onClick={() => setFilter("pending")}>Pending Issues</a>
                     </li>
                   </ul>
                 </div>
@@ -718,29 +958,77 @@ const ManagerDashboard = () => {
 
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold">{selectedIssue.title}</h2>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`badge ${
-                          selectedIssue.status === "solved"
-                            ? "badge-success"
-                            : selectedIssue.status === "unsolved"
-                            ? "badge-error"
-                            : "badge-warning"
-                        }`}
-                      >
-                        {selectedIssue.status}
-                      </span>
-                      <span
-                        className={`badge ${
-                          selectedIssue.priority === "high"
-                            ? "badge-error"
-                            : selectedIssue.priority === "medium"
-                            ? "badge-warning"
-                            : "badge-info"
-                        }`}
-                      >
-                        {selectedIssue.priority}
-                      </span>
+                    <div className="flex flex-col md:flex-row gap-2">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`badge ${
+                            selectedIssue.status === "solved"
+                              ? "badge-success"
+                              : selectedIssue.status === "unsolved"
+                              ? "badge-error"
+                              : "badge-warning"
+                          }`}
+                        >
+                          {selectedIssue.status}
+                        </span>
+                        <span
+                          className={`badge ${
+                            selectedIssue.priority === "high"
+                              ? "badge-error"
+                              : selectedIssue.priority === "medium"
+                              ? "badge-warning"
+                              : "badge-info"
+                          }`}
+                        >
+                          {selectedIssue.priority}
+                        </span>
+                      </div>
+                      <div className="dropdown dropdown-end">
+                        <div tabIndex={0} role="button" className="btn btn-sm">
+                          Change Status
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
+                        >
+                          <li>
+                            <a
+                              onClick={() =>
+                                handleUpdateIssueStatus(
+                                  selectedIssue._id,
+                                  "solved"
+                                )
+                              }
+                            >
+                              Mark as Solved
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              onClick={() =>
+                                handleUpdateIssueStatus(
+                                  selectedIssue._id,
+                                  "unsolved"
+                                )
+                              }
+                            >
+                              Mark as Unsolved
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              onClick={() =>
+                                handleUpdateIssueStatus(
+                                  selectedIssue._id,
+                                  "pending"
+                                )
+                              }
+                            >
+                              Mark as Pending
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
 
@@ -788,11 +1076,65 @@ const ManagerDashboard = () => {
                   </div>
 
                   {selectedIssue.commentsCount > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-base-content/70">
-                        Comments
+                    <div className="mt-6 space-y-4">
+                      <h3 className="text-md font-semibold">
+                        Conversation History ({selectedIssue.commentsCount}{" "}
+                        comments)
                       </h3>
-                      <p>{selectedIssue.commentsCount} comment(s)</p>
+                      <div className="space-y-4">
+                        {/* Create mock conversation based on commentsCount */}
+                        {Array(selectedIssue.commentsCount)
+                          .fill()
+                          .map((_, index) => (
+                            <div
+                              key={`comment-${index}`}
+                              className={`chat ${
+                                index % 2 === 0 ? "chat-start" : "chat-end"
+                              }`}
+                            >
+                              <div className="chat-image avatar">
+                                <div className="w-10 rounded-full">
+                                  <div className="bg-primary text-white w-full h-full flex items-center justify-center">
+                                    {index % 2 === 0
+                                      ? "S"
+                                      : selectedIssue.assignedTo
+                                          ?.fullName?.[0] || "A"}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="chat-header">
+                                {index % 2 === 0
+                                  ? "Student User"
+                                  : selectedIssue.assignedTo?.fullName ||
+                                    "Staff"}
+                                <time className="text-xs opacity-50 ml-2">
+                                  {formatDistanceToNow(
+                                    new Date(
+                                      new Date(
+                                        selectedIssue.createdAt
+                                      ).getTime() +
+                                        index * 12 * 60 * 60 * 1000
+                                    ),
+                                    { addSuffix: true }
+                                  )}
+                                </time>
+                              </div>
+                              <div className="chat-bubble">
+                                {index % 2 === 0
+                                  ? `Hello, I'm having an issue with ${selectedIssue.title.toLowerCase()}.`
+                                  : `I'll help you resolve this issue. Can you provide more details about the problem?`}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                      <div className="mt-4 flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add a response..."
+                          className="input input-bordered w-full"
+                        />
+                        <button className="btn btn-primary">Send</button>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -181,6 +181,24 @@ export const getDepartmentStats = async (req, res) => {
         }
       });
 
+      // Generate mock performance history for the last 7 days
+      const last7Days = [...Array(7)]
+        .map((_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          return date.toISOString().split("T")[0];
+        })
+        .reverse();
+
+      const performanceHistory = last7Days.map((date) => {
+        // Generate a random performance between 70-90%
+        const performance = 70 + Math.floor(Math.random() * 20);
+        return {
+          date,
+          performance,
+        };
+      });
+
       // Add placeholders to the response
       const response = {
         totalStaff: staffMembers.length,
