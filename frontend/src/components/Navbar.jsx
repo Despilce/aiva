@@ -28,19 +28,19 @@ const Navbar = () => {
               href="https://inet.mdis.uz/"
               className="text-xs font-bold text-primary hover:opacity-80 transition-opacity"
             >
-              inet
+              Inet
             </a>
             <a
               href="https://elearning.mdis.edu.sg/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_24_1"
               className="text-xs font-bold text-primary hover:opacity-80 transition-opacity"
             >
-              bb
+              Blackboard
             </a>
             <a
               href="https://outlook.office365.com/mail/"
               className="text-xs font-bold text-primary hover:opacity-80 transition-opacity"
             >
-              mail
+              Webmail
             </a>
           </div>
 
