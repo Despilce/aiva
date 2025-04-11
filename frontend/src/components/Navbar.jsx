@@ -34,13 +34,13 @@ const Navbar = () => {
               href="https://elearning.mdis.edu.sg/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_24_1"
               className="text-xs font-bold text-primary hover:opacity-80 transition-opacity"
             >
-              blackboard
+              bb
             </a>
             <a
-              href="https://mail.mdis.uz/owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2fmail.mdis.uz%2fowa%2f"
+              href="https://outlook.office365.com/mail/"
               className="text-xs font-bold text-primary hover:opacity-80 transition-opacity"
             >
-              webmail
+              mail
             </a>
           </div>
 
