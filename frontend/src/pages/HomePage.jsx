@@ -6,6 +6,7 @@ import NoChatSelected from "../components/NoChatSelected";
 import ChatContainer from "../components/ChatContainer";
 import ManagerDashboard from "../components/ManagerDashboard";
 import { LayoutDashboard } from "lucide-react";
+import DepartmentPortalChat from "../components/DepartmentPortalChat";
 
 const HomePage = () => {
   const { authUser } = useAuthStore();
@@ -15,6 +16,10 @@ const HomePage = () => {
     return saved ? JSON.parse(saved) : false;
   });
   const isManager = authUser?.userType === "manager";
+
+  // New state for selected department portal
+  const [selectedDepartmentPortal, setSelectedDepartmentPortal] =
+    useState(null);
 
   useEffect(() => {
     localStorage.setItem("showDashboard", JSON.stringify(showDashboard));
@@ -36,6 +41,17 @@ const HomePage = () => {
     }
   }, [isManager]);
 
+  // Deselect user when department portal is selected, and vice versa
+  useEffect(() => {
+    if (selectedDepartmentPortal) {
+      // Deselect user chat if department portal is selected
+      if (selectedUser) {
+        // Use the chat store's setSelectedUser if needed
+        // setSelectedUser(null);
+      }
+    }
+  }, [selectedDepartmentPortal]);
+
   return (
     <div className="h-screen bg-base-200">
       <div className="relative">
@@ -45,9 +61,32 @@ const HomePage = () => {
           <div className="flex items-center justify-center pt-20 px-4">
             <div className="bg-base-100 rounded-lg shadow-cl w-full max-w-7xl h-[calc(100vh-6rem)]">
               <div className="flex h-full rounded-lg overflow-hidden">
-                <Sidebar />
-                {!isMobileView && !selectedUser && <NoChatSelected />}
-                {selectedUser && <ChatContainer />}
+                {/* Mobile view: show only portal chat if selected */}
+                {isMobileView && selectedDepartmentPortal ? (
+                  <DepartmentPortalChat
+                    department={selectedDepartmentPortal}
+                    onClose={() => setSelectedDepartmentPortal(null)}
+                  />
+                ) : (
+                  <>
+                    <Sidebar
+                      onDepartmentPortalSelect={setSelectedDepartmentPortal}
+                    />
+                    {/* Department portal chat takes priority if selected */}
+                    {!isMobileView &&
+                      !selectedUser &&
+                      !selectedDepartmentPortal && <NoChatSelected />}
+                    {selectedUser && !selectedDepartmentPortal && (
+                      <ChatContainer />
+                    )}
+                    {selectedDepartmentPortal && !isMobileView && (
+                      <DepartmentPortalChat
+                        department={selectedDepartmentPortal}
+                        onClose={() => setSelectedDepartmentPortal(null)}
+                      />
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>

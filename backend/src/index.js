@@ -11,6 +11,7 @@ import { authRouter } from "./routes/auth.route.js";
 import { messageRouter } from "./routes/message.route.js";
 import { statsRouter } from "./routes/stats.route.js";
 import { app, server } from "./lib/socket.js";
+import { departmentMessageRouter } from "./routes/departmentMessage.route.js";
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use(cors(corsOptions));
 app.use("/api/auth", authRouter);
 app.use("/api/messages", messageRouter);
 app.use("/api/stats", statsRouter);
+app.use("/api/department-messages", departmentMessageRouter);
 
 // Debug endpoint to check server status
 app.get("/api/debug", (req, res) => {
