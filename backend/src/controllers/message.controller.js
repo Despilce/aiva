@@ -60,14 +60,21 @@ export const getMessages = async (req, res) => {
   try {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
+    const { departmentMessageId } = req.query;
 
-    const messages = await Message.find({
+    let query = {
       $or: [
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-    });
+    };
+    if (departmentMessageId) {
+      query.departmentMessageId = departmentMessageId;
+    } else {
+      query.departmentMessageId = null;
+    }
 
+    const messages = await Message.find(query);
     res.status(200).json(messages);
   } catch (error) {
     console.log("Error in getMessages controller: ", error.message);
@@ -83,6 +90,7 @@ export const sendMessage = async (req, res) => {
     const text = req.body.text;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
+    const { departmentMessageId } = req.body;
 
     // Validate receiver exists
     const receiver = await User.findById(receiverId);
@@ -123,6 +131,7 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text,
       image: imageUrl,
+      departmentMessageId: departmentMessageId || null,
     });
 
     await newMessage.save();

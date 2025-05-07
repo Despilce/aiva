@@ -120,6 +120,13 @@ const Sidebar = ({ onDepartmentPortalSelect }) => {
 
   // Personal mode: show existing chats
   const displayedUsers = searchQuery ? searchResults : users;
+  // Group users by portal issue chats and normal chats
+  const portalIssueChats = displayedUsers.filter(
+    (user) => user.lastMessage && user.lastMessage.departmentMessageId
+  );
+  const normalChats = displayedUsers.filter(
+    (user) => !user.lastMessage || !user.lastMessage.departmentMessageId
+  );
 
   return (
     <>
@@ -161,9 +168,7 @@ const Sidebar = ({ onDepartmentPortalSelect }) => {
         {/* Content */}
         {sidebarMode === "personal" ? (
           <div className="border-b border-base-300 w-full p-5 pb-0">
-            <div className="flex items-center gap-2">
-              
-            </div>
+            <div className="flex items-center gap-2"></div>
             {/* Search input */}
             <div className="mt-3">
               <div className="relative">
@@ -186,13 +191,13 @@ const Sidebar = ({ onDepartmentPortalSelect }) => {
               </div>
             </div>
             <div className="overflow-y-auto w-full py-3">
-              {isSearching ? (
-                <div className="text-center text-zinc-500 py-4">
-                  Searching...
-                </div>
-              ) : (
-                <>
-                  {displayedUsers.map((user) => (
+              {/* Portal Issue Chats */}
+              {portalIssueChats.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs font-bold text-warning mb-2">
+                    Portal Issue Chats
+                  </div>
+                  {portalIssueChats.map((user) => (
                     <button
                       key={user._id}
                       onClick={() => handleUserSelect(user)}
@@ -225,7 +230,64 @@ const Sidebar = ({ onDepartmentPortalSelect }) => {
                           isMobileView ? "block" : "hidden lg:block"
                         } text-left min-w-0`}
                       >
-                        <div className="font-medium truncate">
+                        <div className="font-medium truncate flex items-center gap-2">
+                          {user.fullName}
+                          {user._id === authUser._id && " (You)"}
+                          <span className="ml-2 px-2 py-0.5 text-xs rounded bg-warning text-warning-content font-semibold">
+                            Portal Issue
+                          </span>
+                        </div>
+                        <div className="text-sm text-zinc-400">
+                          {user.department ||
+                            (onlineUsers.includes(user._id)
+                              ? "Online"
+                              : "Offline")}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Normal Chats */}
+              {normalChats.length > 0 && (
+                <div>
+                  <div className="text-xs font-bold text-base-content/60 mb-2">
+                    Normal Chats
+                  </div>
+                  {normalChats.map((user) => (
+                    <button
+                      key={user._id}
+                      onClick={() => handleUserSelect(user)}
+                      className={`
+                        w-full p-3 flex items-center gap-3
+                        hover:bg-base-300 transition-colors
+                        ${
+                          selectedUser?._id === user._id
+                            ? "bg-base-300 ring-1 ring-base-300"
+                            : ""
+                        }
+                      `}
+                    >
+                      <div
+                        className={`relative ${
+                          isMobileView ? "" : "mx-auto lg:mx-0"
+                        }`}
+                      >
+                        <img
+                          src={user.profilePic || "/avatar.png"}
+                          alt={user.name}
+                          className="size-12 object-cover rounded-full"
+                        />
+                        {onlineUsers.includes(user._id) && (
+                          <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full ring-2 ring-zinc-900" />
+                        )}
+                      </div>
+                      <div
+                        className={`$${
+                          isMobileView ? "block" : "hidden lg:block"
+                        } text-left min-w-0`}
+                      >
+                        <div className="font-medium truncate flex items-center gap-2">
                           {user.fullName}
                           {user._id === authUser._id && " (You)"}
                         </div>
@@ -238,12 +300,12 @@ const Sidebar = ({ onDepartmentPortalSelect }) => {
                       </div>
                     </button>
                   ))}
-                  {displayedUsers.length === 0 && (
-                    <div className="text-center text-zinc-500 py-4">
-                      {searchQuery ? "No users found" : "No conversations yet"}
-                    </div>
-                  )}
-                </>
+                </div>
+              )}
+              {portalIssueChats.length === 0 && normalChats.length === 0 && (
+                <div className="text-center text-zinc-500 py-4">
+                  {searchQuery ? "No users found" : "No conversations yet"}
+                </div>
               )}
             </div>
           </div>

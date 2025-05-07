@@ -18,6 +18,11 @@ const messageSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    departmentMessageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DepartmentMessage",
+      default: null,
+    },
   },
   { timestamps: true }
 );

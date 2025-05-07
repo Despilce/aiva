@@ -6,6 +6,7 @@ import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import { ArrowLeft } from "lucide-react";
 import Message from "./Message";
+import { format } from "date-fns";
 
 const ChatContainer = () => {
   const {
@@ -17,6 +18,7 @@ const ChatContainer = () => {
     subscribeToMessages,
     unsubscribeFromMessages,
     isMobileView,
+    isPostedIssueChat,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
@@ -48,6 +50,11 @@ const ChatContainer = () => {
     );
   }
 
+  let postedIssue = null;
+  if (Array.isArray(messages) && messages.length > 0) {
+    postedIssue = messages.find((msg) => msg.departmentMessageId);
+  }
+
   return (
     <div
       className={`flex-1 flex flex-col overflow-auto ${
@@ -68,6 +75,22 @@ const ChatContainer = () => {
       )}
 
       <ChatHeader />
+
+      {postedIssue && (
+        <div className="bg-base-200 p-4 border-b border-base-300">
+          <div className="font-semibold mb-1">Portal Posted Issue:</div>
+          <div className="text-base-content/80">{postedIssue.text}</div>
+          <div className="text-xs text-base-content/60 mt-1">
+            Posted by:{" "}
+            {postedIssue.senderId === authUser._id
+              ? "You"
+              : selectedUser.fullName}
+            {postedIssue.createdAt && (
+              <span> · {format(new Date(postedIssue.createdAt), "p")}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (

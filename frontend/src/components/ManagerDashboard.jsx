@@ -696,6 +696,17 @@ const ManagerDashboard = () => {
     }
   };
 
+  // Add reset performance button for managers
+  const handleResetPerformance = async () => {
+    try {
+      await axiosInstance.post("/department-messages/reset-performance");
+      await fetchDepartmentStats();
+      toast.success("Performance reset to 0% for all staff and department");
+    } catch (error) {
+      toast.error("Failed to reset performance");
+    }
+  };
+
   if (!authUser?.department) {
     return (
       <div className="min-h-screen bg-base-200 p-4 md:p-6 flex items-center justify-center">
@@ -731,6 +742,16 @@ const ManagerDashboard = () => {
             Create Real Issues
           </button>
         </div>
+
+        {/* Only show to managers */}
+        {authUser.userType === "manager" && (
+          <button
+            className="btn btn-warning mb-4"
+            onClick={handleResetPerformance}
+          >
+            Reset All Performance (Test)
+          </button>
+        )}
 
         {/* Department Overview */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">

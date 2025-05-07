@@ -46,8 +46,13 @@ export const useChatStore = create((set, get) => ({
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
-      const res = await axiosInstance.get(`/messages/${userId}`);
-      set({ messages: res.data });
+      // Fetch both normal and posted-issue chats
+      const [normalRes, postedRes] = await Promise.all([
+        axiosInstance.get(`/messages/${userId}?departmentMessageId=`), // normal
+        axiosInstance.get(`/messages/${userId}`), // all (for now, fallback)
+      ]);
+      // For now, use all messages, but expose a helper to filter by departmentMessageId
+      set({ messages: postedRes.data });
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -99,4 +104,11 @@ export const useChatStore = create((set, get) => ({
   setSelectedUser: (selectedUser) => set({ selectedUser }),
   setIsMobileView: (isMobileView) => set({ isMobileView }),
   clearSearchResults: () => set({ searchResults: [] }),
+
+  // Helper: check if a chat with a user is from a posted issue
+  isPostedIssueChat: (messages) => {
+    return (
+      Array.isArray(messages) && messages.some((msg) => msg.departmentMessageId)
+    );
+  },
 }));

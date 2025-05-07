@@ -38,7 +38,7 @@ const departmentMessageSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["open", "assigned", "solved"],
+      enum: ["open", "assigned", "solved", "not_solved"],
       default: "open",
     },
     acceptedAt: {
