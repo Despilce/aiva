@@ -223,6 +223,21 @@ export const acceptDepartmentMessage = async (req, res) => {
         privateChatPayload
       );
     }
+    // Emit accepted event to all staff and the student for real-time portal update
+    const staffList = await User.find({
+      department: message.department,
+      userType: "staff",
+    });
+    staffList.forEach((s) => {
+      const sSocket = getReceiverSocketId(s._id.toString());
+      if (sSocket) {
+        io.to(sSocket).emit("departmentMessage:accepted", message);
+      }
+    });
+    const studentSocket2 = getReceiverSocketId(message.senderId.toString());
+    if (studentSocket2) {
+      io.to(studentSocket2).emit("departmentMessage:accepted", message);
+    }
   } catch (error) {
     res.status(500).json({ error: "Failed to accept department message" });
   }
@@ -262,16 +277,20 @@ export const solveDepartmentMessage = async (req, res) => {
       }
     }
     res.status(200).json(message);
-    // Emit socket event to student and assigned staff
+    // Emit solved event to all staff and the student for real-time portal update
+    const staffList = await User.find({
+      department: message.department,
+      userType: "staff",
+    });
+    staffList.forEach((s) => {
+      const sSocket = getReceiverSocketId(s._id.toString());
+      if (sSocket) {
+        io.to(sSocket).emit("departmentMessage:solved", message);
+      }
+    });
     const studentSocket = getReceiverSocketId(message.senderId.toString());
     if (studentSocket) {
       io.to(studentSocket).emit("departmentMessage:solved", message);
-    }
-    if (message.assignedStaff) {
-      const staffSocket = getReceiverSocketId(message.assignedStaff.toString());
-      if (staffSocket) {
-        io.to(staffSocket).emit("departmentMessage:solved", message);
-      }
     }
   } catch (error) {
     res.status(500).json({ error: "Failed to solve department message" });
@@ -308,6 +327,21 @@ export const markMessageNotSolved = async (req, res) => {
       }
     }
     res.json(message);
+    // Emit failed event to all staff and the student for real-time portal update
+    const staffList = await User.find({
+      department: message.department,
+      userType: "staff",
+    });
+    staffList.forEach((s) => {
+      const sSocket = getReceiverSocketId(s._id.toString());
+      if (sSocket) {
+        io.to(sSocket).emit("departmentMessage:failed", message);
+      }
+    });
+    const studentSocket = getReceiverSocketId(message.senderId.toString());
+    if (studentSocket) {
+      io.to(studentSocket).emit("departmentMessage:failed", message);
+    }
   } catch (error) {
     res.status(500).json({ error: "Failed to mark as not solved" });
   }

@@ -11,6 +11,8 @@ const PrivateChat = ({
   onTimerExpire,
   departmentMessageId = null,
   postedIssue = null,
+  isAssignedStaff = false,
+  onSolved,
 }) => {
   const { authUser, socket } = useAuthStore();
   const [messages, setMessages] = useState([]);
@@ -169,11 +171,24 @@ const PrivateChat = ({
               isExpired ? "text-error" : "text-primary"
             }`}
           >
-            Timer: {timer}s
+            Timer:{" "}
+            {typeof timer === "number" && timer >= 0 ? (
+              `${timer}s`
+            ) : (
+              <span className="loading loading-spinner loading-xs"></span>
+            )}
           </span>
-          <button className="btn btn-sm" onClick={onClose}>
-            Close
-          </button>
+          {isAssignedStaff && !isExpired ? (
+            <button className="btn btn-success btn-sm" onClick={onSolved}>
+              Solved
+            </button>
+          ) : (
+            onClose && (
+              <button className="btn btn-sm" onClick={onClose}>
+                Close
+              </button>
+            )
+          )}
         </div>
       </div>
       {/* Show posted issue at the top if present */}

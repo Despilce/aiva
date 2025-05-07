@@ -27,6 +27,7 @@ const DepartmentPortalChat = ({ department, onClose }) => {
   const [deptStats, setDeptStats] = useState(null);
   const [isDeptStatsLoading, setIsDeptStatsLoading] = useState(false);
   const [privateChat, setPrivateChat] = useState(null);
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   const departmentAvatars = {
     "SSU(Student Support Unit)": "/SSU.jpg",
@@ -203,10 +204,12 @@ const DepartmentPortalChat = ({ department, onClose }) => {
     socket.on("departmentMessage:new", handleRealtimeUpdate);
     socket.on("departmentMessage:accepted", handleRealtimeUpdate);
     socket.on("departmentMessage:solved", handleRealtimeUpdate);
+    socket.on("departmentMessage:failed", handleRealtimeUpdate);
     return () => {
       socket.off("departmentMessage:new", handleRealtimeUpdate);
       socket.off("departmentMessage:accepted", handleRealtimeUpdate);
       socket.off("departmentMessage:solved", handleRealtimeUpdate);
+      socket.off("departmentMessage:failed", handleRealtimeUpdate);
     };
     // eslint-disable-next-line
   }, [socket, department, selectedDate]);
@@ -274,21 +277,49 @@ const DepartmentPortalChat = ({ department, onClose }) => {
       );
     // Use the departmentMessageId from the posted issue
     const departmentMessageId = postedIssue ? postedIssue._id : null;
+    // If this is the assigned staff, show Solved button instead of Close
+    const isAssignedStaff =
+      authUser.userType === "staff" &&
+      postedIssue &&
+      postedIssue.assignedStaff &&
+      postedIssue.assignedStaff._id === authUser._id;
     return (
       <PrivateChat
         studentId={privateChat.studentId}
         staffId={privateChat.staffId}
         timer={timer}
-        onClose={() => setPrivateChat(null)}
-        onTimerExpire={() => {}}
+        onClose={isAssignedStaff ? undefined : () => setPrivateChat(null)}
+        onSolved={
+          isAssignedStaff
+            ? async () => {
+                await axiosInstance.post(
+                  `/department-messages/solve/${departmentMessageId}`
+                );
+                await fetchMessages(selectedDate);
+                setPrivateChat(null);
+              }
+            : undefined
+        }
+        onTimerExpire={async () => {
+          // If not solved, mark as not solved (fail) and update portal for all
+          if (isAssignedStaff && postedIssue.status === "assigned") {
+            await axiosInstance.post(
+              `/department-messages/fail/${departmentMessageId}`
+            );
+          }
+          await fetchMessages(selectedDate);
+          setPrivateChat(null);
+        }}
         departmentMessageId={departmentMessageId}
         postedIssue={postedIssue}
+        isAssignedStaff={isAssignedStaff}
       />
     );
   }
 
   // Always show PrivateChat if there is an active session (open or assigned)
   if (
+    !sessionEnded &&
     activeChat &&
     (activeChat.status === "open" || activeChat.status === "assigned")
   ) {
@@ -310,6 +341,7 @@ const DepartmentPortalChat = ({ department, onClose }) => {
           onTimerExpire={async () => {
             // When timer expires, refresh portal state so the UI updates
             await fetchMessages(selectedDate);
+            setSessionEnded(true);
           }}
           departmentMessageId={departmentMessageId}
           postedIssue={postedIssue}
@@ -423,13 +455,6 @@ const DepartmentPortalChat = ({ department, onClose }) => {
           <div className="text-base-content/60 italic">{emptyStateMessage}</div>
         ) : (
           <>
-            {activeChat && activeChat.status === "assigned" && timer > 0 && (
-              <div className="w-full flex justify-center py-2">
-                <span className="font-mono text-lg font-bold text-primary">
-                  Timer: {timer}s
-                </span>
-              </div>
-            )}
             {messages.map((msg) => (
               <div
                 key={msg._id}
@@ -491,14 +516,18 @@ const DepartmentPortalChat = ({ department, onClose }) => {
                         s
                       </div>
                     )}
-                  {/* Accepted by for other staff while assigned */}
-                  {msg.status === "assigned" &&
-                    msg.assignedStaff &&
-                    msg.assignedStaff._id !== authUser._id && (
-                      <div className="text-xs text-primary mt-1">
-                        Accepted by {msg.assignedStaff.fullName}
-                      </div>
-                    )}
+                  {/* Accepted by for all staff while assigned */}
+                  {msg.status === "assigned" && msg.assignedStaff && (
+                    <div className="text-xs text-primary mt-1">
+                      Accepted by {msg.assignedStaff.fullName}
+                    </div>
+                  )}
+                  {/* Show failed info and accept button for other staff if not solved */}
+                  {msg.status === "not_solved" && msg.assignedStaff && (
+                    <div className="text-xs text-error mt-1 font-bold">
+                      Failed by {msg.assignedStaff.fullName}
+                    </div>
+                  )}
                 </div>
                 {/* Staff: show Accept button for unassigned student messages */}
                 {authUser.userType === "staff" &&
@@ -516,7 +545,23 @@ const DepartmentPortalChat = ({ department, onClose }) => {
                       Accept
                     </button>
                   )}
-                {/* Assigned staff: show Solved button for their assigned issue */}
+                {/* Staff: show Accept button for failed issues, but not for the staff who failed */}
+                {authUser.userType === "staff" &&
+                  msg.status === "not_solved" &&
+                  msg.assignedStaff &&
+                  msg.assignedStaff._id !== authUser._id && (
+                    <button
+                      className="btn btn-xs btn-primary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAccept(msg._id, msg.senderId);
+                      }}
+                      disabled={isLoading || !canSendNewIssue}
+                    >
+                      Accept
+                    </button>
+                  )}
+                {/* Assigned staff: show Solved button for their assigned issue (always before timer ends) */}
                 {authUser.userType === "staff" &&
                   msg.status === "assigned" &&
                   msg.assignedStaff &&
