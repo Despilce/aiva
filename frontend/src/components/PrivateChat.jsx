@@ -16,7 +16,7 @@ const PrivateChat = ({
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [timer, setTimer] = useState(initialTimer || 120);
+  const [timer, setTimer] = useState(null);
   const [isExpired, setIsExpired] = useState(false);
   const [studentUser, setStudentUser] = useState(null);
   const [staffUser, setStaffUser] = useState(null);
@@ -41,6 +41,37 @@ const PrivateChat = ({
     };
     fetchUsers();
   }, [studentId, staffId]);
+
+  // Timer logic: always use postedIssue.acceptedAt for persistency
+  useEffect(() => {
+    if (!postedIssue || !postedIssue.acceptedAt) {
+      setTimer(null);
+      setIsExpired(false);
+      return;
+    }
+    const acceptedAt = new Date(postedIssue.acceptedAt).getTime();
+    const updateTimer = () => {
+      const now = Date.now();
+      const elapsed = Math.floor((now - acceptedAt) / 1000);
+      const left = 120 - elapsed;
+      setTimer(left > 0 ? left : 0);
+      if (left <= 0) setIsExpired(true);
+    };
+    updateTimer();
+    if (timer === 0) return;
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line
+  }, [postedIssue && postedIssue.acceptedAt]);
+
+  // Call onTimerExpire only once when timer hits 0
+  useEffect(() => {
+    if (timer === 0 && onTimerExpire && !isExpired) {
+      setIsExpired(true);
+      onTimerExpire();
+    }
+    // eslint-disable-next-line
+  }, [timer, onTimerExpire]);
 
   // Fetch messages between student and staff, filtered by departmentMessageId if present
   const fetchMessages = async () => {
@@ -91,31 +122,26 @@ const PrivateChat = ({
     }
   }, [messages]);
 
-  // Timer logic
-  useEffect(() => {
-    if (timer === null || isExpired) return;
-    if (timer <= 0) {
-      setIsExpired(true);
-      if (onTimerExpire && !isExpired) onTimerExpire();
-      return;
-    }
-    const interval = setInterval(() => {
-      setTimer((t) => t - 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [timer, isExpired, onTimerExpire]);
-
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || isExpired) return;
     setIsLoading(true);
     try {
-      await axiosInstance.post(`/messages/send/${otherUserId}`, {
+      // Optimistically add the message to the UI for real-time feedback
+      const optimisticMsg = {
+        _id: `optimistic-${Date.now()}`,
+        senderId: authUser._id,
+        receiverId: otherUserId,
         text: input,
         departmentMessageId,
-      });
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, optimisticMsg]);
       setInput("");
-      // fetchMessages(); // Real-time will update
+      await axiosInstance.post(`/messages/send/${otherUserId}`, {
+        text: optimisticMsg.text,
+        departmentMessageId,
+      });
     } catch (error) {
       // Optionally show error
     } finally {
@@ -125,6 +151,8 @@ const PrivateChat = ({
 
   // Helper to get sender info
   const getSenderInfo = (msg) => {
+    if (msg.senderId === authUser._id)
+      return { fullName: "You", profilePic: authUser.profilePic };
     if (msg.senderId === studentId)
       return studentUser || { fullName: "Student" };
     if (msg.senderId === staffId) return staffUser || { fullName: "Staff" };
